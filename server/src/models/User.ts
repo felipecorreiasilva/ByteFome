@@ -1,4 +1,4 @@
-import { pool } from '../config/db.js'
+import { pool } from '../config/db';
 
 export interface UserAddress {
     id?: number;
@@ -83,6 +83,11 @@ export class UserModel {
         const result = await pool.query(query, values);
 
         return result.rows[0] || null;
+    }
+
+    static async delete(id: number): Promise<boolean> {
+        const result = await pool.query('DELETE FROM users WHERE id = $1 RETURNING id', [id]);
+        return (result.rowCount ?? 0) > 0;
     }
 
 }

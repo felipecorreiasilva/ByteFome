@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { ProductModel } from '../models/Product.js';
+import { ProductModel } from '../models/Product';
 
 export class ProductController {
   // 1. GET - Listar todos os produtos

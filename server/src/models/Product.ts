@@ -1,4 +1,4 @@
-import { pool } from '../config/db.js';
+import { pool } from '../config/db';
 
 // Definição da interface (tipagem) para o Produto
 export interface Product {

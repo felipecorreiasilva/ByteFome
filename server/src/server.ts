@@ -2,7 +2,7 @@ import express from 'express';
 import type { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import productRoutes from './routes/productRoutes.js';
+import productRoutes from './routes/productRoutes';
 
 dotenv.config();
 
