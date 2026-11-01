@@ -19,5 +19,4 @@ INSERT INTO products (name, category, description, price, image_url, is_availabl
 ('Água Mineral 500ml', 'bebidas', 'Garrafa de água mineral sem gás.', 4.50, 'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=500', TRUE),
 
 -- Sobremesas
-('Milkshake de Chocolate', 'sobremesas', 'Milkshake cremoso de chocolate com chantilly e calda.', 14.90, 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=500', TRUE),
-('Pudim de Leite Condensado', 'sobremesas', 'Fatia generosa de pudim tradicional com calda de caramelo.', 10.00, 'https://images.unsplash.com/photo-1527224538127-2104bb71c68b?w=500', TRUE);
+('Milkshake de Chocolate', 'sobremesas', 'Milkshake cremoso de chocolate com chantilly e calda.', 14.90, 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=500', TRUE);
