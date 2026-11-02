@@ -26,8 +26,10 @@ api.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response && error.response.status === 401) {
-            // Se o token for inválido ou expirado, removemos do storage e redirecionamos para o login
-            if (typeof window !== 'undefined') {
+            // VERIFICAÇÃO: Se o erro 401 NÃO veio da rota de login, aí sim redirecionamos
+            const isLoginRoute = error.config?.url?.includes('/auth/login');
+
+            if (!isLoginRoute && typeof window !== 'undefined') {
                 localStorage.removeItem('@ByteFome:token');
                 window.location.href = '/';
             }

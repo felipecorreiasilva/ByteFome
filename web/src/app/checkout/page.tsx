@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -11,7 +11,6 @@ export default function CheckoutPage() {
     const router = useRouter();
 
     const [step, setStep] = useState(1);
-
     const [cep, setCep] = useState('');
     const [address, setAddress] = useState('');
     const [streetNumber, setStreetNumber] = useState('');
@@ -21,14 +20,33 @@ export default function CheckoutPage() {
     const [paymentMethod, setPaymentMethod] = useState('pix');
     const [loading, setLoading] = useState(false);
     const [fetchingCep, setFetchingCep] = useState(false);
+    const [checkingAuth, setCheckingAuth] = useState(true); // Estado para controlar o carregamento da verificação
 
-    // Função para tratar a digitação do CEP, formatar e remover o traço para a API/State
+    // Verificar se o utilizador está logado ao carregar a página
+    useEffect(() => {
+        const token = localStorage.getItem('token'); // Ou o método que usas para guardar a autenticação (ex: Contexto / Cookies)
+
+        if (!token) {
+            alert('Tens de fazer login para finalizar o pedido.');
+            router.push('/login'); // Redireciona para a página de login
+        } else {
+            setCheckingAuth(false); // Liberta a página se estiver autenticado
+        }
+    }, [router]);
+
+    // Enquanto verifica a autenticação, mostra um ecrã de carregamento limpo
+    if (checkingAuth) {
+        return (
+            <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
+                <p className="text-zinc-400 animate-pulse">A verificar autenticação...</p>
+            </div>
+        );
+    }
+
     const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        // Remove tudo o que não for dígito (isso remove automaticamente o traço "-" e quaisquer outros caracteres)
         const rawCep = e.target.value.replace(/\D/g, '').slice(0, 8);
         setCep(rawCep);
 
-        // Quando o CEP atingir 8 dígitos, faz a busca automática
         if (rawCep.length === 8) {
             try {
                 setFetchingCep(true);
@@ -50,7 +68,6 @@ export default function CheckoutPage() {
         }
     };
 
-    // Função auxiliar para exibir o CEP formatado no input (ex: 38413-675) mesmo guardando limpo
     const formatCepDisplay = (value: string) => {
         if (value.length > 5) {
             return `${value.slice(0, 5)}-${value.slice(5, 8)}`;
@@ -78,12 +95,14 @@ export default function CheckoutPage() {
         try {
             setLoading(true);
 
+            const token = localStorage.getItem('token');
+
             const orderData = {
                 items: cart,
                 total: totalPrice,
                 paymentMethod,
                 shippingAddress: {
-                    cep, // Já vai guardado sem o hífen (ex: "38413675")
+                    cep,
                     address,
                     street_number: streetNumber,
                     complement,
@@ -91,7 +110,10 @@ export default function CheckoutPage() {
                 }
             };
 
-            // await axios.post('/api/orders', orderData);
+            // Exemplo com envio do token no header de autorização:
+            // await axios.post('/api/orders', orderData, {
+            //     headers: { Authorization: `Bearer ${token}` }
+            // });
 
             alert('Pedido criado com sucesso!');
             clearCart();
@@ -109,7 +131,6 @@ export default function CheckoutPage() {
             <div className="max-w-3xl mx-auto">
                 <h1 className="text-2xl font-bold mb-6">Finalizar o seu Pedido</h1>
 
-                {/* Indicador de Passos */}
                 <div className="flex items-center gap-4 mb-8 text-sm font-medium">
                     <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border ${step === 1 ? 'border-red-500 bg-red-500/10 text-red-400' : 'border-zinc-800 bg-zinc-900 text-zinc-400'}`}>
                         <span>1. Morada</span>
@@ -119,7 +140,6 @@ export default function CheckoutPage() {
                     </div>
                 </div>
 
-                {/* PASSO 1: Morada de Entrega */}
                 {step === 1 && (
                     <form onSubmit={handleNextStep} className="space-y-6">
                         <div className="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 space-y-4">
@@ -131,7 +151,7 @@ export default function CheckoutPage() {
                                     <div className="relative">
                                         <input
                                             type="text"
-                                            maxLength={9} // Permite contar com o hífen na visualização
+                                            maxLength={9}
                                             value={formatCepDisplay(cep)}
                                             onChange={handleCepChange}
                                             placeholder="Ex: 38413-675"
@@ -208,7 +228,6 @@ export default function CheckoutPage() {
                     </form>
                 )}
 
-                {/* PASSO 2: Método de Pagamento */}
                 {step === 2 && (
                     <div className="space-y-6">
                         <div className="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 space-y-6">
