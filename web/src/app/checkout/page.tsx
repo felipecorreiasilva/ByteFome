@@ -27,8 +27,9 @@ export default function CheckoutPage() {
     const [loading, setLoading] = useState(false);
     const [fetchingCep, setFetchingCep] = useState(false);
 
-    // Estado para controlar a abertura do modal Pix
+    // Estados para controlar o modal Pix e o ID do pedido gerado
     const [showPixModal, setShowPixModal] = useState(false);
+    const [createdOrderId, setCreatedOrderId] = useState<number | null>(null);
 
     // Proteção da rota baseada no AuthContext
     useEffect(() => {
@@ -99,12 +100,6 @@ export default function CheckoutPage() {
             return;
         }
 
-        // Se for Pix, abrimos o modal do QR Code. O pedido só será persistido na BD após a confirmação do pagamento via Webhook.
-        if (paymentMethod === 'pix') {
-            setShowPixModal(true);
-            return;
-        }
-
         try {
             setLoading(true);
 
@@ -125,8 +120,24 @@ export default function CheckoutPage() {
                 }
             };
 
-            await orderService.createOrder(orderPayload);
+            // 1. Criamos sempre o pedido na base de dados para obter o ID real
+            const response: any = await orderService.createOrder(orderPayload);
+            const orderId = response.id || response.data?.id;
 
+            if (!orderId) {
+                throw new Error('ID do pedido não retornado pelo servidor.');
+            }
+
+            setCreatedOrderId(orderId);
+
+            // 2. Se o método for Pix, abrimos o modal passando o ID gerado para que a Efí crie a cobrança
+            if (paymentMethod === 'pix') {
+                setShowPixModal(true);
+                setLoading(false);
+                return;
+            }
+
+            // Para outros métodos de pagamento (dinheiro/cartão direto)
             alert('Pedido criado com sucesso!');
             clearCart();
             router.push('/orders/success'); 
@@ -135,41 +146,18 @@ export default function CheckoutPage() {
             const errorMessage = error.response?.data?.error || 'Ocorreu um erro ao processar o seu pedido.';
             alert(errorMessage);
         } finally {
-            setLoading(false);
+            if (paymentMethod !== 'pix') {
+                setLoading(false);
+            }
         }
     };
 
-    // Função executada automaticamente quando o webhook confirma o pagamento do Pix
-    const handlePaymentApproved = async () => {
-        try {
-            const orderPayload = {
-                items: cart.map(item => ({
-                    product_id: item.product.id,
-                    quantity: item.quantity,
-                    price: Number(item.product.price)
-                })),
-                total: totalPrice,
-                paymentMethod: 'pix' as PaymentMethod,
-                shippingAddress: {
-                    cep,
-                    address,
-                    street_number: streetNumber,
-                    complement,
-                    neighborhood
-                }
-            };
-
-            // Cria o pedido na base de dados após a confirmação do pagamento
-            await orderService.createOrder(orderPayload);
-
-            setShowPixModal(false);
-            alert('Pagamento via Pix confirmado com sucesso!');
-            clearCart();
-            router.push('/orders/success');
-        } catch (error: any) {
-            console.error('Erro ao criar pedido após pagamento Pix:', error);
-            alert('Pagamento confirmado, mas ocorreu um erro ao registar o pedido.');
-        }
+    // Função executada quando o pagamento Pix é confirmado pelo webhook ou validado
+    const handlePaymentApproved = () => {
+        setShowPixModal(false);
+        alert('Pagamento via Pix confirmado com sucesso!');
+        clearCart();
+        router.push('/orders/success');
     };
 
     return (
@@ -362,9 +350,10 @@ export default function CheckoutPage() {
                 )}
             </div>
 
-            {/* Renderização do Modal Pix com o onPaymentApproved configurado */}
+            {/* Modal Pix agora recebe o orderId gerado com sucesso */}
             <PaymentPixModal 
                 isOpen={showPixModal}
+                orderId={createdOrderId}
                 totalAmount={totalPrice}
                 onClose={() => setShowPixModal(false)}
                 onPaymentApproved={handlePaymentApproved}
