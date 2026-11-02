@@ -30,10 +30,10 @@ export const efiController = {
                     expiracao: 3600
                 },
                 valor: {
-                    original: Number(order.total).toFixed(2)
+                    original: Number(order.total_amount).toFixed(2)
                 },
                 chave: pixKey,
-                solicitacaoPagador: `Pedido #${order.id} - ByteFome`
+                solicitacaoPagador: `Pedido #${order.id} ByteFome`
             };
 
             // 1. Cria a cobrança imediata
