@@ -10,6 +10,7 @@ import productRoutes from './routes/productRoutes';
 import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
 import orderRoutes from './routes/orderRoutes';
+import efiRoutes from './routes/efiRoutes';
 
 dotenv.config();
 
@@ -31,6 +32,7 @@ app.use('/products', productRoutes);
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
 app.use('/orders', orderRoutes);
+app.use('/efi', efiRoutes);
 
 app.get('/', (req: Request, res: Response) => {
   res.json({ message: 'API do ByteFome rodando com TypeScript 🚀' });
