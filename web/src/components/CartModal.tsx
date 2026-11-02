@@ -12,6 +12,9 @@ interface CartModalProps {
 export function CartModal({ isOpen, onClose }: CartModalProps) {
     const { cart, addToCart, removeFromCart, clearCart, totalPrice } = useCart();
 
+    // Obtém a URL base do backend a partir do .env.local
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333';
+
     if (!isOpen) return null;
 
     return (
@@ -60,7 +63,7 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
                                 {item.product.image_url ? (
                                     <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-zinc-800">
                                         <Image
-                                            src={item.product.image_url}
+                                            src={`${API_URL}${item.product.image_url}`}
                                             alt={item.product.name}
                                             fill
                                             className="object-cover"

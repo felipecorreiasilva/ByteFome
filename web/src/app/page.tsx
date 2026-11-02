@@ -14,6 +14,9 @@ export default function Home() {
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  // Obtém a URL base do backend a partir do .env.local
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333';
+
   useEffect(() => {
     async function loadProducts() {
       try {
@@ -160,7 +163,7 @@ export default function Home() {
               {/* Seta Esquerda */}
               <button
                 onClick={scrollLeft}
-                className="hidden md:flex shrink-0 h-12 w-12 items-center justify-center rounded-full bg-zinc-900 border border-zinc-800 text-white hover:bg-red-600 hover:border-red-600 transition-all shadow-xl z-10"
+                className="hidden md:flex shrink-0 h-12 w-12 items-center justify-center rounded-full bg-zinc-900 border border-zinc-800 text-white hover:bg-red-600 hover:border-red-600 transition-all shadow-xl z-10 cursor-pointer"
                 aria-label="Anterior"
               >
                 ←
@@ -180,7 +183,7 @@ export default function Home() {
                     <div>
                       {product.image_url ? (
                         <img
-                          src={product.image_url}
+                          src={`${API_URL}${product.image_url}`}
                           alt={product.name}
                           className="h-48 w-full rounded-xl object-cover mb-4 shadow-md"
                         />
@@ -212,11 +215,11 @@ export default function Home() {
                         R$ {Number(product.price).toFixed(2).replace('.', ',')}
                       </span>
                       <button
-                      onClick={() => addToCart(product)}
-                      className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white transition-all hover:bg-red-500 shadow-md shadow-red-600/30 cursor-pointer"
-                    >
-                      Pedir Agora
-                    </button>
+                        onClick={() => addToCart(product)}
+                        className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white transition-all hover:bg-red-500 shadow-md shadow-red-600/30 cursor-pointer"
+                      >
+                        Pedir Agora
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -225,7 +228,7 @@ export default function Home() {
               {/* Seta Direita */}
               <button
                 onClick={scrollRight}
-                className="hidden md:flex shrink-0 h-12 w-12 items-center justify-center rounded-full bg-zinc-900 border border-zinc-800 text-white hover:bg-red-600 hover:border-red-600 transition-all shadow-xl z-10"
+                className="hidden md:flex shrink-0 h-12 w-12 items-center justify-center rounded-full bg-zinc-900 border border-zinc-800 text-white hover:bg-red-600 hover:border-red-600 transition-all shadow-xl z-10 cursor-pointer"
                 aria-label="Seguinte"
               >
                 →
