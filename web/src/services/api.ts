@@ -29,7 +29,7 @@ api.interceptors.response.use(
             // Se o token for inválido ou expirado, removemos do storage e redirecionamos para o login
             if (typeof window !== 'undefined') {
                 localStorage.removeItem('@ByteFome:token');
-                window.location.href = '/login';
+                window.location.href = '/';
             }
         }
         return Promise.reject(error);

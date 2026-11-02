@@ -1,4 +1,5 @@
 import api from './api';
+import { tokenService } from './tokenService';
 
 export interface AuthResponse {
     token: string;
@@ -20,20 +21,20 @@ export const authService = {
     async login(credentials: LoginCredentials): Promise<string> {
         const response = await api.post<AuthResponse>('/auth/login', credentials);
 
-        // Guarda apenas o token
-        localStorage.setItem('@ByteFome:token', response.data.token);
+        // Guarda o token utilizando o tokenService unificado
+        tokenService.setToken(response.data.token);
         return response.data.token;
     },
 
     async register(data: RegisterDTO): Promise<string> {
         const response = await api.post<AuthResponse>('/auth/register', data);
 
-        // Guarda apenas o token
-        localStorage.setItem('@ByteFome:token', response.data.token);
+        // Guarda o token utilizando o tokenService unificado
+        tokenService.setToken(response.data.token);
         return response.data.token;
     },
 
     logout() {
-        localStorage.removeItem('@ByteFome:token');
+        tokenService.removeToken();
     }
 };

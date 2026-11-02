@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { authService } from '@/services/authService';
+import { useAuth } from '@/context/AuthContext'; // Importa o hook do contexto global
 
 export default function RegisterPage() {
     const [name, setName] = useState('');
@@ -12,6 +12,8 @@ export default function RegisterPage() {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    
+    const { register } = useAuth(); // Extrai a função register do AuthContext
     const router = useRouter();
 
     const handleRegister = async (e: React.FormEvent) => {
@@ -26,8 +28,9 @@ export default function RegisterPage() {
         setLoading(true);
 
         try {
-            await authService.register({ name, email, password });
-            router.push('/');
+            // Chama a função register do contexto (guarda o token e busca o utilizador completo por ID)
+            await register({ name, email, password });
+            router.push('/'); // Redireciona instantaneamente sem perder o estado
         } catch (err: any) {
             const errorMessage = err.response?.data?.error || err.message || 'Erro ao criar conta.';
             setError(errorMessage);
@@ -104,7 +107,7 @@ export default function RegisterPage() {
                 </button>
 
                 <div className="text-center text-sm text-zinc-400 pt-2 border-t border-zinc-800">
-                    Já tens conta?{' '}
+                    Já tem conta?{' '}
                     <Link href="/login" className="text-red-500 hover:text-red-400 font-medium transition">
                         Entrar
                     </Link>

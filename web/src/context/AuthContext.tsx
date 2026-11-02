@@ -1,9 +1,17 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { jwtDecode } from 'jwt-decode';
 import { User } from '@/types/user';
 import { authService, LoginCredentials, RegisterDTO } from '@/services/authService';
+import { userService } from '@/services/userService';
 import { tokenService } from '@/services/tokenService';
+
+interface JwtPayload {
+    id: number;
+    email: string;
+    role: string;
+}
 
 interface AuthContextData {
     user: User | null;
@@ -20,24 +28,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Ao carregar a aplicação, verifica se existe um token válido e recupera o utilizador
-    useEffect(() => {
-        const currentUser = tokenService.getUserFromToken();
-        if (currentUser) {
-            setUser(currentUser);
+    const fetchAndSetUser = async (token: string) => {
+        try {
+            const decoded = jwtDecode<JwtPayload>(token);
+            if (decoded && decoded.id) {
+                // Aqui utilizamos obrigatoriamente o teu userService com a rota /users/:id
+                const fullUser = await userService.getUserById(decoded.id);
+                setUser(fullUser);
+            }
+        } catch (error) {
+            console.error('Erro ao buscar dados completos do utilizador:', error);
+            tokenService.removeToken();
+            setUser(null);
         }
-        setIsLoading(false);
+    };
+
+    useEffect(() => {
+        const loadStoredData = async () => {
+            try {
+                const token = tokenService.getToken();
+                if (token) {
+                    await fetchAndSetUser(token);
+                }
+            } catch (error) {
+                tokenService.removeToken();
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadStoredData();
     }, []);
 
     const login = async (credentials: LoginCredentials) => {
         setIsLoading(true);
         try {
-            
             const token = await authService.login(credentials);
-            tokenService.setToken(token);
-            
-            const decodedUser = tokenService.getUserFromToken();
-            setUser(decodedUser);
+            tokenService.setToken(token); // Guarda primeiro para o Axios o apanhar
+            await fetchAndSetUser(token); // Busca o user completo por ID instantaneamente
         } finally {
             setIsLoading(false);
         }
@@ -47,10 +75,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoading(true);
         try {
             const token = await authService.register(data);
-            tokenService.setToken(token);
-            
-            const decodedUser = tokenService.getUserFromToken();
-            setUser(decodedUser);
+            tokenService.setToken(token); // Guarda primeiro para o Axios o apanhar
+            await fetchAndSetUser(token); // Busca o user completo por ID instantaneamente
         } finally {
             setIsLoading(false);
         }
@@ -59,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const logout = () => {
         tokenService.removeToken();
         setUser(null);
-        window.location.href = '/login'; // Redireciona para o login de forma limpa
+        window.location.href = '/login';
     };
 
     return (

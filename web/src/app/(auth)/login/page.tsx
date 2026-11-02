@@ -3,13 +3,15 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { authService } from '@/services/authService';
+import { useAuth } from '@/context/AuthContext'; // Importa o hook do contexto de autenticação
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    
+    const { login } = useAuth(); // Extrai a função login do AuthContext
     const router = useRouter();
 
     const handleLogin = async (e: React.FormEvent) => {
@@ -18,8 +20,9 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            await authService.login({ email, password });
-            router.push('/');
+            // Chama a função login do contexto (que já guarda o token e busca o utilizador completo)
+            await login({ email, password });
+            router.push('/'); // Redireciona de forma fluida e instantânea
         } catch (err: any) {
             const errorMessage = err.response?.data?.error || err.message || 'Erro ao efetuar login.';
             setError(errorMessage);
@@ -73,7 +76,7 @@ export default function LoginPage() {
 
                 {/* Aviso para quem ainda não tem conta */}
                 <div className="text-center text-sm text-zinc-400 pt-2 border-t border-zinc-800">
-                    Ainda não tens conta?{' '}
+                    Ainda não tem conta?{' '}
                     <Link href="/register" className="text-red-500 hover:text-red-400 font-medium transition">
                         Criar conta
                     </Link>

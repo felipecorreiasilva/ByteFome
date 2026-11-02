@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import productRoutes from './routes/productRoutes';
 import authRoutes from './routes/authRoutes';
+import userRoutes from './routes/userRoutes';
 
 dotenv.config();
 
@@ -17,7 +18,9 @@ app.use(cors());
 // Rotas da API para produtos
 app.use('/api/products', productRoutes);
 // ... após criar a instância do express
-app.use('/auth', authRoutes);
+app.use('/api/auth', authRoutes);
+// Rotas da API para utilizadores
+app.use('/api/users', userRoutes);
 
 app.get('/', (req: Request, res: Response) => {
   res.json({ message: 'API do ByteFome rodando com TypeScript 🚀' });
