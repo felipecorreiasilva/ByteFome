@@ -5,8 +5,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ProductService } from '@/services/productService';
 import { Product } from '@/types/product';
+import { useCart } from '@/context/CartContext';
 
 export default function Home() {
+  const { addToCart } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -209,12 +211,12 @@ export default function Home() {
                       <span className="text-lg font-extrabold text-white">
                         R$ {Number(product.price).toFixed(2).replace('.', ',')}
                       </span>
-                      <Link
-                        href={`/products`}
-                        className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white transition-all hover:bg-red-500 shadow-md shadow-red-600/30"
-                      >
-                        Pedir Agora
-                      </Link>
+                      <button
+                      onClick={() => addToCart(product)}
+                      className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white transition-all hover:bg-red-500 shadow-md shadow-red-600/30 cursor-pointer"
+                    >
+                      Pedir Agora
+                    </button>
                     </div>
                   </div>
                 ))}
