@@ -2,12 +2,19 @@ import express from 'express';
 import type { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
 import productRoutes from './routes/productRoutes';
 import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
 
 dotenv.config();
 
+// Define __dirname manualmente para ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3333;
@@ -15,12 +22,13 @@ const PORT = process.env.PORT || 3333;
 app.use(express.json());
 app.use(cors());
 
-// Rotas da API para produtos
-app.use('/api/products', productRoutes);
-// ... após criar a instância do express
-app.use('/api/auth', authRoutes);
-// Rotas da API para utilizadores
-app.use('/api/users', userRoutes);
+// Servir a pasta de uploads estática (como a pasta uploads está fora de src/, usamos ../uploads)
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+// Rotas da API
+app.use('/products', productRoutes);
+app.use('/auth', authRoutes);
+app.use('/users', userRoutes);
 
 app.get('/', (req: Request, res: Response) => {
   res.json({ message: 'API do ByteFome rodando com TypeScript 🚀' });
