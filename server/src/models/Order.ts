@@ -32,11 +32,11 @@ export const OrderModel = {
         try {
             await client.query('BEGIN');
 
-            // Inserir o pedido principal na tabela 'orders'
+            // Inserir o pedido principal na tabela 'orders' (Corrigido de 'total' para 'total_amount')
             const orderQuery = `
                 INSERT INTO orders (
                     user_id, 
-                    total, 
+                    total_amount, 
                     payment_method, 
                     cep, 
                     address, 
@@ -119,7 +119,7 @@ export const OrderModel = {
         return result.rows[0];
     },
 
-    // 4. UPDATE STATUS - Atualizar o estado do pedido (ex: pending -> received -> preparing -> delivering -> completed)
+    // 4. UPDATE STATUS - Atualizar o estado do pedido
     async updateStatus(orderId: number, status: string) {
         const query = `
             UPDATE orders 
