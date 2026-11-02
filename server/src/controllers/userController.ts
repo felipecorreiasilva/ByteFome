@@ -1,3 +1,5 @@
+import fs from 'fs/promises';
+import path from 'path';
 import { Request, Response } from 'express';
 import { UserModel } from '../models/User';
 import { AuthenticatedRequest } from '../middlewares/authMiddleware';
@@ -35,7 +37,7 @@ export class UserController {
     static async updateUser(req: AuthenticatedRequest, res: Response) {
         try {
             const id = Number(req.params.id);
-            const { name, email, role, image_url } = req.body;
+            const { name, email, role } = req.body;
 
             // Dados do utilizador que está a fazer a requisição (vindos do verifyAuth / authMiddleware)
             const loggedUserId = req.user?.id;
@@ -58,8 +60,15 @@ export class UserController {
                 });
             }
 
+            // 3. Tratamento da Imagem de Perfil via Multer
+            let image_url = req.body.image_url;
+            if (req.file) {
+                // Se um ficheiro foi enviado pelo Multer, definimos o caminho relativo correto
+                image_url = `/uploads/users/${req.file.filename}`;
+            }
+
             // Monta o objeto com os dados permitidos para atualização
-            const dataToUpdate: any = { name, email, image_url }; // <-- ADICIONADO image_url aqui
+            const dataToUpdate: any = { name, email, image_url };
             
             if (isAdmin) {
                 dataToUpdate.role = role; // Apenas admin pode persistir a alteração de role
@@ -78,20 +87,36 @@ export class UserController {
         }
     }
 
-    // Deletar utilizador (Apenas para Admin)
-    static async deleteUser(req: Request, res: Response) {
+    // Deletar utilizador
+    static async deleteUser(req: AuthenticatedRequest, res: Response) {
         try {
             const id = Number(req.params.id);
-            
-            // Exemplo de verificação caso recebas o role do utilizador autenticado via middleware (ex: req.user)
-            // if (req.user?.role !== 'admin') {
-            //     return res.status(403).json({ error: 'Acesso negado. Apenas administradores podem deletar utilizadores.' });
-            // }
 
-            const deletedUser = await UserModel.delete(id); // Vais precisar de garantir que este método existe no UserModel
+            // 1. Buscar o utilizador antes de o apagar para obter o caminho da imagem de perfil (image_url)
+            const user = await UserModel.findById(id);
 
-            if (!deletedUser) {
+            if (!user) {
                 return res.status(404).json({ error: 'Utilizador não encontrado.' });
+            }
+
+            // 2. Executar a exclusão na base de dados
+            const deleted = await UserModel.delete(id);
+
+            if (!deleted) {
+                return res.status(404).json({ error: 'Utilizador não encontrado para exclusão.' });
+            }
+
+            // 3. Se o utilizador tinha uma imagem de perfil associada, remove o ficheiro físico do servidor
+            if (user.image_url) {
+                try {
+                    // user.image_url vem como algo do tipo: "/uploads/users/nome-do-avatar.jpg"
+                    const filePath = path.join(process.cwd(), user.image_url);
+                    
+                    await fs.unlink(filePath);
+                    console.log(`Ficheiro de avatar removido com sucesso: ${filePath}`);
+                } catch (fileError) {
+                    console.warn('Aviso: O ficheiro de avatar não foi encontrado no disco para exclusão.', fileError);
+                }
             }
 
             return res.status(200).json({ message: 'Utilizador deletado com sucesso.' });

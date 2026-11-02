@@ -26,12 +26,19 @@ export class AuthController {
             const saltRounds = 10;
             const password_hash = await bcrypt.hash(password, saltRounds);
 
-            // Criar o utilizador na base de dados
+            // Tratamento da Imagem de Perfil via Multer (caso o utilizador envie uma foto no registo)
+            let image_url = req.body.image_url;
+            if (req.file) {
+                image_url = `/uploads/users/${req.file.filename}`;
+            }
+
+            // Criar o utilizador na base de dados (incluindo a image_url se existir)
             const newUser = await UserModel.create({
                 name,
                 email,
                 password_hash,
-                role: role || 'client'
+                role: role || 'client',
+                image_url // <-- Adicionado aqui para persistir na BD
             });
 
             // Gerar o token JWT para autenticação imediata após o registo

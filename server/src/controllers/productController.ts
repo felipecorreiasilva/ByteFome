@@ -1,5 +1,7 @@
 import type { Request, Response } from 'express';
 import { ProductModel } from '../models/Product';
+import fs from 'fs/promises';
+import path from 'path';
 
 export class ProductController {
   // 1. GET - Listar todos os produtos
@@ -33,43 +35,57 @@ export class ProductController {
 
   // 3. POST - Criar um novo produto
   static async create(req: Request, res: Response): Promise<void> {
-    try {
-      const { name, category, description, price, image_url, is_available } = req.body;
+      try {
+          const { name, category, description, price, is_available } = req.body;
 
-      // Validação simples dos campos obrigatórios
-      if (!name || !category || price === undefined) {
-        res.status(400).json({ error: 'Os campos name, category e price são obrigatórios.' });
-        return;
+          // Validação simples dos campos obrigatórios
+          if (!name || !category || price === undefined) {
+              res.status(400).json({ error: 'Os campos name, category e price são obrigatórios.' });
+              return;
+          }
+
+          // Tratamento da Imagem do Produto via Multer
+          let image_url = req.body.image_url;
+          if (req.file) {
+              // Define o caminho relativo para o ficheiro guardado pelo uploadProduct middleware
+              image_url = `/uploads/products/${req.file.filename}`;
+          }
+
+          const newProduct = await ProductModel.create({
+              name,
+              category,
+              description,
+              price,
+              image_url, // Guarda o caminho da imagem gerado ou enviado
+              is_available,
+          });
+
+          res.status(201).json(newProduct);
+      } catch (error) {
+          console.error('Erro ao criar produto:', error);
+          res.status(500).json({ error: 'Erro interno no servidor ao criar produto.' });
       }
-
-      const newProduct = await ProductModel.create({
-        name,
-        category,
-        description,
-        price,
-        image_url,
-        is_available,
-      });
-
-      res.status(201).json(newProduct);
-    } catch (error) {
-      console.error('Erro ao criar produto:', error);
-      res.status(500).json({ error: 'Erro interno no servidor ao criar produto.' });
-    }
   }
 
   // 4. PUT/PATCH - Atualizar um produto
   static async update(req: Request, res: Response): Promise<void> {
     try {
       const id = Number(req.params.id);
-      const { name, category, description, price, image_url, is_available } = req.body;
+      const { name, category, description, price, is_available } = req.body;
+
+      // Tratamento da Imagem do Produto via Multer (caso uma nova imagem seja enviada)
+      let image_url = req.body.image_url;
+      if (req.file) {
+        // Se um novo ficheiro foi enviado, define o caminho relativo correto para a pasta de produtos
+        image_url = `/uploads/products/${req.file.filename}`;
+      }
 
       const updatedProduct = await ProductModel.update(id, {
         name,
         category,
         description,
         price,
-        image_url,
+        image_url, // Atualiza com o novo caminho gerado pelo Multer (ou mantém o valor anterior caso não venha nova imagem)
         is_available,
       });
 
@@ -89,11 +105,31 @@ export class ProductController {
   static async delete(req: Request, res: Response): Promise<void> {
     try {
       const id = Number(req.params.id);
+
+      // 1. Opcional mas recomendado: Buscar o produto antes para obter o caminho da imagem
+      const product = await ProductModel.findById(id);
+
+      // 2. Executar a exclusão na base de dados
       const deleted = await ProductModel.delete(id);
 
       if (!deleted) {
         res.status(404).json({ error: 'Produto não encontrado para exclusão.' });
         return;
+      }
+
+      // 3. Se o produto tinha uma imagem associada no servidor, remove o ficheiro físico
+      if (product && product.image_url) {
+        try {
+          // product.image_url vem como algo do tipo: "/uploads/products/nome-do-arquivo.jpg"
+          // Convertemos para o caminho absoluto no disco do sistema
+          const filePath = path.join(process.cwd(), product.image_url);
+          
+          await fs.unlink(filePath);
+          console.log(`Ficheiro de imagem removido com sucesso: ${filePath}`);
+        } catch (fileError) {
+          // Se o ficheiro já não existir no disco, apenas registamos o aviso sem quebrar a resposta da API
+          console.warn('Aviso: O ficheiro de imagem não foi encontrado no disco para exclusão.', fileError);
+        }
       }
 
       res.status(200).json({ message: 'Produto removido com sucesso.' });

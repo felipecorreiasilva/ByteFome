@@ -61,7 +61,8 @@ router.post(
 router.put(
     '/:id', 
     verifyAuth, 
-    verifyAdmin, 
+    verifyAdmin,
+    uploadProduct.single('image'),
     ProductController.update
 );
 
