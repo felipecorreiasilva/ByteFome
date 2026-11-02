@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { UserController } from '../controllers/userController';
 import { verifyAuth } from '../middlewares/authMiddleware';
 import { verifyAdmin } from '../middlewares/adminMiddleware';
+import { uploadUser } from '../middlewares/uploadUserMiddleware';
 // Futuramente, se quiseres permitir upload de avatar/foto de perfil:
 // import { uploadUser } from '../middlewares/uploadUserMiddleware';
 
@@ -34,7 +35,7 @@ router.get('/:id', verifyAuth, UserController.getUserById);
  * @access  Privado
  * @example PUT http://localhost:3333/api/users/1
  */
-router.put('/:id', verifyAuth, UserController.updateUser);
+router.put('/:id', verifyAuth, uploadUser.single('image'), UserController.updateUser);
 
 /**
  * @route   DELETE /api/users/:id

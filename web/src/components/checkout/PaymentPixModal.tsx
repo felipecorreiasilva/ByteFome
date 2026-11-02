@@ -38,13 +38,14 @@ export default function PaymentPixModal({ isOpen, orderId, totalAmount, onClose,
                 // Chama o backend através do efiService
                 const data = await efiService.gerarCobrancaPix(orderId);
 
-                if (isMounted) {
-                    setPixCopyPaste(data.pixCopiaECola);
-                    // Se a Efí retornar a imagem em Base64, tratamos o formato data:image/png;base64,...
-                    // Caso contrário, se retornar URL, adaptamos. A SDK geralmente devolve em Base64 ou string de imagem.
-                    const qrImageSrc = data.qrcode.startsWith('data:image') 
-                        ? data.qrcode 
-                        : `data:image/png;base64,${data.qrcode}`;
+                if (isMounted && data) {
+                    setPixCopyPaste(data.pixCopiaECola || '');
+                    
+                    // Tratamento seguro para evitar erros caso data.qrcode venha indefinido
+                    const qrCodeRaw = data.qrcode || '';
+                    const qrImageSrc = qrCodeRaw.startsWith('data:image') 
+                        ? qrCodeRaw 
+                        : qrCodeRaw ? `data:image/png;base64,${qrCodeRaw}` : '';
                     
                     setQrCodeImage(qrImageSrc);
                 }
@@ -100,7 +101,7 @@ export default function PaymentPixModal({ isOpen, orderId, totalAmount, onClose,
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4">
             <div className="bg-zinc-900 border border-zinc-800 p-6 md:p-8 rounded-3xl max-w-md w-full text-center space-y-6 shadow-2xl relative animate-in fade-in zoom-in duration-200">
                 
                 {/* Botão X para fechar o modal */}

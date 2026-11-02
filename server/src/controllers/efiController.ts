@@ -46,8 +46,8 @@ export const efiController = {
 
             return res.status(201).json({
                 txid,
-                qrcode: qrcodeResponse.imagenQrcode, 
-                pixCopiaECola: qrcodeResponse.qrcode 
+                qrcode: qrcodeResponse.imagemQrcode,     // Imagem Base64 do QR Code para a tag <img>
+                pixCopiaECola: qrcodeResponse.qrcode      // Chave Pix Copia e Cola para o input
             });
         } catch (error: any) {
             console.error('Erro ao gerar cobrança Pix na Efí:', error?.data || error);
