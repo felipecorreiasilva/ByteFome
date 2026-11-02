@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
 import { useCart } from '@/context/CartContext';
 
 interface CartModalProps {
@@ -62,11 +61,10 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
                             <div key={item.product.id} className="flex items-center justify-between gap-4 bg-zinc-950/60 p-3.5 rounded-2xl border border-zinc-800/80 shadow-md">
                                 {item.product.image_url ? (
                                     <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-zinc-800">
-                                        <Image
+                                        <img
                                             src={`${API_URL}${item.product.image_url}`}
                                             alt={item.product.name}
-                                            fill
-                                            className="object-cover"
+                                            className="h-full w-full object-cover"
                                         />
                                     </div>
                                 ) : (
