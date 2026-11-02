@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useCart } from '@/context/CartContext';
+import { useRouter } from 'next/navigation';
 
 interface CartModalProps {
     isOpen: boolean;
@@ -9,6 +10,7 @@ interface CartModalProps {
 }
 
 export function CartModal({ isOpen, onClose }: CartModalProps) {
+    const router = useRouter();
     const { cart, addToCart, removeFromCart, clearCart, totalPrice } = useCart();
 
     // Obtém a URL base do backend a partir do .env.local
@@ -122,8 +124,8 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
                             </button>
                             <button
                                 onClick={() => {
-                                    alert('A avançar para o checkout/finalização do pedido!');
-                                    onClose();
+                                    onClose(); // Fecha o modal do carrinho
+                                    router.push('/checkout'); // Redireciona para a página de checkout
                                 }}
                                 className="flex-2 rounded-xl bg-red-600 py-3 text-sm font-bold text-white hover:bg-red-500 transition shadow-lg shadow-red-600/30 cursor-pointer"
                             >
