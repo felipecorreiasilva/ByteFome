@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { UserModel } from '../models/User';
+import { AuthenticatedRequest } from '../middlewares/authMiddleware';
 
 export class UserController {
     // Listar todos os utilizadores (sem password_hash)
@@ -31,12 +32,40 @@ export class UserController {
     }
 
     // Atualizar utilizador
-    static async updateUser(req: Request, res: Response) {
+    static async updateUser(req: AuthenticatedRequest, res: Response) {
         try {
             const id = Number(req.params.id);
-            const { name, email, role } = req.body;
+            const { name, email, role, image_url } = req.body;
 
-            const updatedUser = await UserModel.update(id, { name, email, role });
+            // Dados do utilizador que está a fazer a requisição (vindos do verifyAuth / authMiddleware)
+            const loggedUserId = req.user?.id;
+            const loggedUserRole = req.user?.role;
+
+            const isAdmin = loggedUserRole === 'admin';
+            const isSelfUpdate = loggedUserId === id;
+
+            // 1. Validação de Identidade: Se não for admin e tentar editar outro utilizador, bloqueia
+            if (!isAdmin && !isSelfUpdate) {
+                return res.status(403).json({ 
+                    error: 'Acesso negado. Só podes atualizar o teu próprio perfil.' 
+                });
+            }
+
+            // 2. Validação de Alteração de Role: Apenas administradores podem alterar o campo 'role'
+            if (role !== undefined && !isAdmin) {
+                return res.status(403).json({ 
+                    error: 'Acesso negado. Apenas administradores podem alterar o cargo (role) de um utilizador.' 
+                });
+            }
+
+            // Monta o objeto com os dados permitidos para atualização
+            const dataToUpdate: any = { name, email, image_url }; // <-- ADICIONADO image_url aqui
+            
+            if (isAdmin) {
+                dataToUpdate.role = role; // Apenas admin pode persistir a alteração de role
+            }
+
+            const updatedUser = await UserModel.update(id, dataToUpdate);
 
             if (!updatedUser) {
                 return res.status(404).json({ error: 'Utilizador não encontrado para atualização.' });

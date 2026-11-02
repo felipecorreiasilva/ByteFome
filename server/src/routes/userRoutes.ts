@@ -1,22 +1,47 @@
 import { Router } from 'express';
 import { UserController } from '../controllers/userController';
-// Opcional: Se tiveres um middleware de autenticação JWT para proteger as rotas
-// import { authMiddleware } from '../middlewares/authMiddleware';
+import { verifyAuth } from '../middlewares/authMiddleware';
+import { verifyAdmin } from '../middlewares/adminMiddleware';
+// Futuramente, se quiseres permitir upload de avatar/foto de perfil:
+// import { uploadUser } from '../middlewares/uploadUserMiddleware';
 
 const router = Router();
 
-// Todas as rotas aqui definidas terão o prefixo /users (ou /api/users dependendo do server.js)
+/**
+ * ==========================================
+ * ROTAS DE UTILIZADORES
+ * ==========================================
+ */
 
-// Listar todos os utilizadores
-router.get('/', UserController.getAllUsers);
+/**
+ * @route   GET /api/users
+ * @desc    Listar todos os utilizadores cadastrados
+ * @access  Privado (Normalmente restrito a administradores)
+ */
+router.get('/', verifyAuth, verifyAdmin, UserController.getAllUsers);
 
-// Buscar um utilizador específico por ID (ex: GET /users/1)
-router.get('/:id', UserController.getUserById);
+/**
+ * @route   GET /api/users/:id
+ * @desc    Obter os detalhes de um utilizador específico pelo ID
+ * @access  Privado
+ * @example GET http://localhost:3333/api/users/1
+ */
+router.get('/:id', verifyAuth, UserController.getUserById);
 
-// Atualizar um utilizador por ID
-router.put('/:id', UserController.updateUser);
+/**
+ * @route   PUT /api/users/:id
+ * @desc    Atualizar os dados de um utilizador por ID
+ * @access  Privado
+ * @example PUT http://localhost:3333/api/users/1
+ */
+router.put('/:id', verifyAuth, UserController.updateUser);
 
-// Deletar um utilizador por ID
-router.delete('/:id', UserController.deleteUser);
+/**
+ * @route   DELETE /api/users/:id
+ * @desc    Remover um utilizador do sistema pelo ID
+ * @access  Privado (Admin)
+ * @example DELETE http://localhost:3333/api/users/1
+ */
+router.delete('/:id', verifyAuth, verifyAdmin, UserController.deleteUser);
 
 export default router;
