@@ -1,3 +1,5 @@
+// /app/checkout/page.tsx
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -6,6 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { orderService } from '@/services/orderService';
 import { PaymentMethod } from '@/types/order';
+import PaymentPixModal from '@/components/checkout/PaymentPixModal';
 import { FaPix, FaCreditCard, FaMoneyBillWave } from 'react-icons/fa6';
 
 export default function CheckoutPage() {
@@ -20,10 +23,12 @@ export default function CheckoutPage() {
     const [complement, setComplement] = useState('');
     const [neighborhood, setNeighborhood] = useState('');
     
-    // Atualizado para suportar os métodos corretos da base de dados
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
     const [loading, setLoading] = useState(false);
     const [fetchingCep, setFetchingCep] = useState(false);
+
+    // Estado para controlar a abertura do modal Pix
+    const [showPixModal, setShowPixModal] = useState(false);
 
     // Proteção da rota baseada no AuthContext
     useEffect(() => {
@@ -94,14 +99,20 @@ export default function CheckoutPage() {
             return;
         }
 
+        // Se for Pix, abrimos o modal do QR Code. O pedido só será persistido na BD após a confirmação do pagamento via Webhook.
+        if (paymentMethod === 'pix') {
+            setShowPixModal(true);
+            return;
+        }
+
         try {
             setLoading(true);
 
             const orderPayload = {
                 items: cart.map(item => ({
-                    product_id: item.product.id,     // Acede corretamente ao ID dentro de product
-                    quantity: item.quantity,         // Quantidade do item no carrinho
-                    price: Number(item.product.price)// Preço unitário do produto
+                    product_id: item.product.id,
+                    quantity: item.quantity,
+                    price: Number(item.product.price)
                 })),
                 total: totalPrice,
                 paymentMethod,
@@ -114,7 +125,6 @@ export default function CheckoutPage() {
                 }
             };
 
-            // Utiliza o orderService criado para enviar os dados
             await orderService.createOrder(orderPayload);
 
             alert('Pedido criado com sucesso!');
@@ -129,8 +139,41 @@ export default function CheckoutPage() {
         }
     };
 
+    // Função executada automaticamente quando o webhook confirma o pagamento do Pix
+    const handlePaymentApproved = async () => {
+        try {
+            const orderPayload = {
+                items: cart.map(item => ({
+                    product_id: item.product.id,
+                    quantity: item.quantity,
+                    price: Number(item.product.price)
+                })),
+                total: totalPrice,
+                paymentMethod: 'pix' as PaymentMethod,
+                shippingAddress: {
+                    cep,
+                    address,
+                    street_number: streetNumber,
+                    complement,
+                    neighborhood
+                }
+            };
+
+            // Cria o pedido na base de dados após a confirmação do pagamento
+            await orderService.createOrder(orderPayload);
+
+            setShowPixModal(false);
+            alert('Pagamento via Pix confirmado com sucesso!');
+            clearCart();
+            router.push('/orders/success');
+        } catch (error: any) {
+            console.error('Erro ao criar pedido após pagamento Pix:', error);
+            alert('Pagamento confirmado, mas ocorreu um erro ao registar o pedido.');
+        }
+    };
+
     return (
-        <div className="min-h-screen bg-zinc-950 text-white p-6 md:p-12">
+        <div className="min-h-screen bg-zinc-950 text-white p-6 md:p-12 relative">
             <div className="max-w-3xl mx-auto">
                 <h1 className="text-2xl font-bold mb-6">Finalizar o seu Pedido</h1>
 
@@ -244,7 +287,6 @@ export default function CheckoutPage() {
                                 </button>
                             </div>
 
-                            {/* Grid com as 4 opções correspondentes à base de dados */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <div
                                     onClick={() => setPaymentMethod('pix')}
@@ -319,6 +361,14 @@ export default function CheckoutPage() {
                     </div>
                 )}
             </div>
+
+            {/* Renderização do Modal Pix com o onPaymentApproved configurado */}
+            <PaymentPixModal 
+                isOpen={showPixModal}
+                totalAmount={totalPrice}
+                onClose={() => setShowPixModal(false)}
+                onPaymentApproved={handlePaymentApproved}
+            />
         </div>
     );
 }
