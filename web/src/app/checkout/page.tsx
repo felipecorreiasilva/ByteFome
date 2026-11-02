@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
+import { orderService } from '@/services/orderService';
+import { PaymentMethod } from '@/types/order';
 import { FaPix, FaCreditCard, FaMoneyBillWave } from 'react-icons/fa6';
 
 export default function CheckoutPage() {
@@ -19,11 +20,12 @@ export default function CheckoutPage() {
     const [complement, setComplement] = useState('');
     const [neighborhood, setNeighborhood] = useState('');
     
-    const [paymentMethod, setPaymentMethod] = useState('pix');
+    // Atualizado para suportar os métodos corretos da base de dados
+    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
     const [loading, setLoading] = useState(false);
     const [fetchingCep, setFetchingCep] = useState(false);
 
-    // Proteção da rota baseada no AuthContext e na chave correta do token
+    // Proteção da rota baseada no AuthContext
     useEffect(() => {
         if (!authLoading && !isAuthenticated) {
             alert('Tens de fazer login para finalizar o pedido.');
@@ -31,7 +33,6 @@ export default function CheckoutPage() {
         }
     }, [isAuthenticated, authLoading, router]);
 
-    // Enquanto o contexto está a carregar o utilizador, mostra um ecrã de espera limpo
     if (authLoading) {
         return (
             <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
@@ -44,7 +45,6 @@ export default function CheckoutPage() {
         return null;
     }
 
-    // Função para autocompletar morada consultando a API ViaCEP com Axios
     const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const rawCep = e.target.value.replace(/\D/g, '').slice(0, 8);
         setCep(rawCep);
@@ -52,8 +52,8 @@ export default function CheckoutPage() {
         if (rawCep.length === 8) {
             try {
                 setFetchingCep(true);
-                const response = await axios.get(`https://viacep.com.br/ws/${rawCep}/json/`);
-                const data = response.data;
+                const response = await fetch(`https://viacep.com.br/ws/${rawCep}/json/`);
+                const data = await response.json();
 
                 if (!data.erro) {
                     setAddress(data.logradouro || '');
@@ -97,10 +97,12 @@ export default function CheckoutPage() {
         try {
             setLoading(true);
 
-            const token = localStorage.getItem('@ByteFome:token');
-
-            const orderData = {
-                items: cart,
+            const orderPayload = {
+                items: cart.map(item => ({
+                    product_id: item.product.id,     // Acede corretamente ao ID dentro de product
+                    quantity: item.quantity,         // Quantidade do item no carrinho
+                    price: Number(item.product.price)// Preço unitário do produto
+                })),
                 total: totalPrice,
                 paymentMethod,
                 shippingAddress: {
@@ -112,17 +114,16 @@ export default function CheckoutPage() {
                 }
             };
 
-            // Exemplo com envio do token no header de autorização:
-            // await axios.post('/api/orders', orderData, {
-            //     headers: { Authorization: `Bearer ${token}` }
-            // });
+            // Utiliza o orderService criado para enviar os dados
+            await orderService.createOrder(orderPayload);
 
             alert('Pedido criado com sucesso!');
             clearCart();
             router.push('/orders/success'); 
-        } catch (error) {
+        } catch (error: any) {
             console.error('Erro ao finalizar pedido:', error);
-            alert('Ocorreu um erro ao processar o seu pedido.');
+            const errorMessage = error.response?.data?.error || 'Ocorreu um erro ao processar o seu pedido.';
+            alert(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -243,44 +244,58 @@ export default function CheckoutPage() {
                                 </button>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {/* Grid com as 4 opções correspondentes à base de dados */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <div
                                     onClick={() => setPaymentMethod('pix')}
-                                    className={`cursor-pointer flex flex-col items-center justify-center p-6 rounded-2xl border transition-all ${
+                                    className={`cursor-pointer flex flex-col items-center justify-center p-4 rounded-2xl border transition-all ${
                                         paymentMethod === 'pix'
                                             ? 'bg-red-500/10 border-red-500 text-white shadow-lg shadow-red-500/10'
                                             : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
                                     }`}
                                 >
-                                    <FaPix className={`w-8 h-8 mb-3 ${paymentMethod === 'pix' ? 'text-red-500' : 'text-zinc-400'}`} />
+                                    <FaPix className={`w-7 h-7 mb-2 ${paymentMethod === 'pix' ? 'text-red-500' : 'text-zinc-400'}`} />
                                     <span className="font-bold text-sm text-zinc-100">Pix</span>
-                                    <span className="text-xs text-zinc-500 mt-1">Aprovação imediata</span>
+                                    <span className="text-[10px] text-zinc-500 mt-1">Imediato</span>
                                 </div>
 
                                 <div
-                                    onClick={() => setPaymentMethod('card')}
-                                    className={`cursor-pointer flex flex-col items-center justify-center p-6 rounded-2xl border transition-all ${
-                                        paymentMethod === 'card'
+                                    onClick={() => setPaymentMethod('credit_card')}
+                                    className={`cursor-pointer flex flex-col items-center justify-center p-4 rounded-2xl border transition-all ${
+                                        paymentMethod === 'credit_card'
                                             ? 'bg-red-500/10 border-red-500 text-white shadow-lg shadow-red-500/10'
                                             : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
                                     }`}
                                 >
-                                    <FaCreditCard className={`w-8 h-8 mb-3 ${paymentMethod === 'card' ? 'text-red-500' : 'text-zinc-400'}`} />
-                                    <span className="font-bold text-sm text-zinc-100">Cartão</span>
-                                    <span className="text-xs text-zinc-500 mt-1">Crédito ou Débito</span>
+                                    <FaCreditCard className={`w-7 h-7 mb-2 ${paymentMethod === 'credit_card' ? 'text-red-500' : 'text-zinc-400'}`} />
+                                    <span className="font-bold text-sm text-zinc-100">Crédito</span>
+                                    <span className="text-[10px] text-zinc-500 mt-1">Cartão de Crédito</span>
+                                </div>
+
+                                <div
+                                    onClick={() => setPaymentMethod('debit_card')}
+                                    className={`cursor-pointer flex flex-col items-center justify-center p-4 rounded-2xl border transition-all ${
+                                        paymentMethod === 'debit_card'
+                                            ? 'bg-red-500/10 border-red-500 text-white shadow-lg shadow-red-500/10'
+                                            : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
+                                    }`}
+                                >
+                                    <FaCreditCard className={`w-7 h-7 mb-2 ${paymentMethod === 'debit_card' ? 'text-red-500' : 'text-zinc-400'}`} />
+                                    <span className="font-bold text-sm text-zinc-100">Débito</span>
+                                    <span className="text-[10px] text-zinc-500 mt-1">Cartão de Débito</span>
                                 </div>
 
                                 <div
                                     onClick={() => setPaymentMethod('cash')}
-                                    className={`cursor-pointer flex flex-col items-center justify-center p-6 rounded-2xl border transition-all ${
+                                    className={`cursor-pointer flex flex-col items-center justify-center p-4 rounded-2xl border transition-all ${
                                         paymentMethod === 'cash'
                                             ? 'bg-red-500/10 border-red-500 text-white shadow-lg shadow-red-500/10'
                                             : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
                                     }`}
                                 >
-                                    <FaMoneyBillWave className={`w-8 h-8 mb-3 ${paymentMethod === 'cash' ? 'text-red-500' : 'text-zinc-400'}`} />
+                                    <FaMoneyBillWave className={`w-7 h-7 mb-2 ${paymentMethod === 'cash' ? 'text-red-500' : 'text-zinc-400'}`} />
                                     <span className="font-bold text-sm text-zinc-100">Dinheiro</span>
-                                    <span className="text-xs text-zinc-500 mt-1">Com troco necessário</span>
+                                    <span className="text-[10px] text-zinc-500 mt-1">Com troco</span>
                                 </div>
                             </div>
                         </div>
