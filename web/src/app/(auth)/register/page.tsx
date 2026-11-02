@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext'; // Importa o hook do contexto global
@@ -13,8 +13,29 @@ export default function RegisterPage() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     
-    const { register } = useAuth(); // Extrai a função register do AuthContext
+    const { register, isAuthenticated, isLoading } = useAuth(); // Extrai as propriedades corretas do AuthContext
     const router = useRouter();
+
+    // Se o utilizador já estiver logado, redireciona automaticamente para a página inicial
+    useEffect(() => {
+        if (!isLoading && isAuthenticated) {
+            router.push('/');
+        }
+    }, [isAuthenticated, isLoading, router]);
+
+    // Enquanto o contexto verifica o estado de autenticação, mostra um ecrã de carregamento limpo
+    if (isLoading) {
+        return (
+            <div className="flex min-h-[calc(100vh-80px)] w-full items-center justify-center bg-zinc-950 text-white">
+                <p className="text-zinc-400 animate-pulse">A carregar...</p>
+            </div>
+        );
+    }
+
+    // Se já estiver autenticado, evita renderizar o formulário enquanto o router redireciona
+    if (isAuthenticated) {
+        return null;
+    }
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();

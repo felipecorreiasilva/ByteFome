@@ -2,12 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { FaPix, FaCreditCard, FaMoneyBillWave } from 'react-icons/fa6';
 
 export default function CheckoutPage() {
     const { cart, totalPrice, clearCart } = useCart();
+    const { isAuthenticated, isLoading: authLoading } = useAuth();
     const router = useRouter();
 
     const [step, setStep] = useState(1);
@@ -20,22 +22,17 @@ export default function CheckoutPage() {
     const [paymentMethod, setPaymentMethod] = useState('pix');
     const [loading, setLoading] = useState(false);
     const [fetchingCep, setFetchingCep] = useState(false);
-    const [checkingAuth, setCheckingAuth] = useState(true); // Estado para controlar o carregamento da verificação
 
-    // Verificar se o utilizador está logado ao carregar a página
+    // Proteção da rota baseada no AuthContext e na chave correta do token
     useEffect(() => {
-        const token = localStorage.getItem('token'); // Ou o método que usas para guardar a autenticação (ex: Contexto / Cookies)
-
-        if (!token) {
+        if (!authLoading && !isAuthenticated) {
             alert('Tens de fazer login para finalizar o pedido.');
-            router.push('/login'); // Redireciona para a página de login
-        } else {
-            setCheckingAuth(false); // Liberta a página se estiver autenticado
+            router.push('/login');
         }
-    }, [router]);
+    }, [isAuthenticated, authLoading, router]);
 
-    // Enquanto verifica a autenticação, mostra um ecrã de carregamento limpo
-    if (checkingAuth) {
+    // Enquanto o contexto está a carregar o utilizador, mostra um ecrã de espera limpo
+    if (authLoading) {
         return (
             <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
                 <p className="text-zinc-400 animate-pulse">A verificar autenticação...</p>
@@ -43,6 +40,11 @@ export default function CheckoutPage() {
         );
     }
 
+    if (!isAuthenticated) {
+        return null;
+    }
+
+    // Função para autocompletar morada consultando a API ViaCEP com Axios
     const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const rawCep = e.target.value.replace(/\D/g, '').slice(0, 8);
         setCep(rawCep);
@@ -95,7 +97,7 @@ export default function CheckoutPage() {
         try {
             setLoading(true);
 
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('@ByteFome:token');
 
             const orderData = {
                 items: cart,

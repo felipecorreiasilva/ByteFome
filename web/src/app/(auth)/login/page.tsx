@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext'; // Importa o hook do contexto de autenticação
@@ -11,8 +11,29 @@ export default function LoginPage() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     
-    const { login } = useAuth(); // Extrai a função login do AuthContext
+    const { login, isAuthenticated, isLoading } = useAuth(); // Extrai também o estado de autenticação
     const router = useRouter();
+
+    // Se o utilizador já estiver logado, redireciona automaticamente para a página inicial
+    useEffect(() => {
+        if (!isLoading && isAuthenticated) {
+            router.push('/');
+        }
+    }, [isAuthenticated, isLoading, router]);
+
+    // Enquanto o contexto verifica o estado de login, mostra um ecrã de carregamento limpo
+    if (isLoading) {
+        return (
+            <div className="flex min-h-[calc(100vh-80px)] w-full items-center justify-center bg-zinc-950 text-white">
+                <p className="text-zinc-400 animate-pulse">A carregar...</p>
+            </div>
+        );
+    }
+
+    // Se já estiver autenticado, evita renderizar o formulário enquanto o router redireciona
+    if (isAuthenticated) {
+        return null;
+    }
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -20,9 +41,8 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            // Chama a função login do contexto (que já guarda o token e busca o utilizador completo)
             await login({ email, password });
-            router.push('/'); // Redireciona de forma fluida e instantânea
+            router.push('/'); // Redireciona após o login bem-sucedido
         } catch (err: any) {
             const errorMessage = err.response?.data?.error || err.message || 'Erro ao efetuar login.';
             setError(errorMessage);
@@ -74,7 +94,6 @@ export default function LoginPage() {
                     {loading ? 'A entrar...' : 'Entrar'}
                 </button>
 
-                {/* Aviso para quem ainda não tem conta */}
                 <div className="text-center text-sm text-zinc-400 pt-2 border-t border-zinc-800">
                     Ainda não tem conta?{' '}
                     <Link href="/register" className="text-red-500 hover:text-red-400 font-medium transition">
