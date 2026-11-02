@@ -9,6 +9,7 @@ import { dirname } from 'path';
 import productRoutes from './routes/productRoutes';
 import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
+import orderRoutes from './routes/orderRoutes';
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use('/products', productRoutes);
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
+app.use('/orders', orderRoutes);
 
 app.get('/', (req: Request, res: Response) => {
   res.json({ message: 'API do ByteFome rodando com TypeScript 🚀' });
