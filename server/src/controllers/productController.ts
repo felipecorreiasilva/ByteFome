@@ -73,11 +73,30 @@ export class ProductController {
       const id = Number(req.params.id);
       const { name, category, description, price, is_available } = req.body;
 
-      // Tratamento da Imagem do Produto via Multer (caso uma nova imagem seja enviada)
-      let image_url = req.body.image_url;
+      // 1. Buscar o produto atual na BD para verificar se já tem uma imagem antiga
+      const existingProduct = await ProductModel.findById(id);
+      if (!existingProduct) {
+        res.status(404).json({ error: 'Produto não encontrado.' });
+        return;
+      }
+
+      // 2. Tratamento da Nova Imagem do Produto via Multer
+      let image_url = req.body.image_url; // Mantém o valor anterior caso venha por texto ou não seja alterada
+      
       if (req.file) {
-        // Se um novo ficheiro foi enviado, define o caminho relativo correto para a pasta de produtos
+        // Se um novo ficheiro foi enviado, define o novo caminho relativo
         image_url = `/uploads/products/${req.file.filename}`;
+
+        // Se o produto já tinha uma imagem anterior gravada, removemos o ficheiro antigo do disco
+        if (existingProduct.image_url) {
+          try {
+            const oldFilePath = path.join(process.cwd(), existingProduct.image_url);
+            await fs.unlink(oldFilePath);
+            console.log(`Imagem antiga do produto removida com sucesso: ${oldFilePath}`);
+          } catch (fileError) {
+            console.warn('Aviso: O ficheiro de imagem antigo do produto não foi encontrado no disco para exclusão.', fileError);
+          }
+        }
       }
 
       const updatedProduct = await ProductModel.update(id, {
@@ -85,7 +104,7 @@ export class ProductController {
         category,
         description,
         price,
-        image_url, // Atualiza com o novo caminho gerado pelo Multer (ou mantém o valor anterior caso não venha nova imagem)
+        image_url, 
         is_available,
       });
 

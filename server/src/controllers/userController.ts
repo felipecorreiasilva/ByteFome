@@ -60,11 +60,29 @@ export class UserController {
                 });
             }
 
-            // 3. Tratamento da Imagem de Perfil via Multer
-            let image_url = req.body.image_url;
+            // 3. Buscar o utilizador atual na BD para verificar se já tem uma imagem antiga
+            const existingUser = await UserModel.findById(id);
+            if (!existingUser) {
+                return res.status(404).json({ error: 'Utilizador não encontrado.' });
+            }
+
+            // 4. Tratamento da Nova Imagem de Perfil via Multer
+            let image_url = req.body.image_url; // Mantém o valor anterior caso venha por texto
+            
             if (req.file) {
-                // Se um ficheiro foi enviado pelo Multer, definimos o caminho relativo correto
+                // Se um novo ficheiro foi enviado pelo Multer, definimos o novo caminho relativo
                 image_url = `/uploads/users/${req.file.filename}`;
+
+                // Se o utilizador já tinha uma imagem anterior gravada, removemos o ficheiro antigo do disco
+                if (existingUser.image_url) {
+                    try {
+                        const oldFilePath = path.join(process.cwd(), existingUser.image_url);
+                        await fs.unlink(oldFilePath);
+                        console.log(`Imagem antiga de avatar removida com sucesso: ${oldFilePath}`);
+                    } catch (fileError) {
+                        console.warn('Aviso: O ficheiro de imagem antigo não foi encontrado no disco para exclusão.', fileError);
+                    }
+                }
             }
 
             // Monta o objeto com os dados permitidos para atualização
@@ -75,10 +93,6 @@ export class UserController {
             }
 
             const updatedUser = await UserModel.update(id, dataToUpdate);
-
-            if (!updatedUser) {
-                return res.status(404).json({ error: 'Utilizador não encontrado para atualização.' });
-            }
 
             return res.status(200).json(updatedUser);
         } catch (error) {
