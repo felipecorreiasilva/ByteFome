@@ -47,8 +47,8 @@ ByteFome/
 
 ⚙️ Como Executar o Projeto Localmente
 Pré-requisitos:
-- **Node.js** (v18 ou superior) 
-- **PostgreSQL** rodando localmente ou via Docker
+- Node.js (v18 ou superior) 
+- PostgreSQL rodando localmente ou via Docker
 - **Expo Go** instalado no seu dispositivo móvel (opcional, para testes do app mobile)
 
 1. Clonar o repositório
