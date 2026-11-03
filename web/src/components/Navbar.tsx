@@ -1,3 +1,5 @@
+// /components/Navbar.tsx (ou o caminho onde tens a tua navbar)
+
 'use client';
 
 import Link from 'next/link';
@@ -6,14 +8,24 @@ import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { CartModal } from '@/components/CartModal';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333';
+
 export function Navbar() {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
-  const { totalItems, setIsCartOpen } = useCart(); // Usamos o setIsCartOpen global do contexto
+  const { totalItems, setIsCartOpen } = useCart();
 
   const getUserInitials = (name?: string) => {
     if (!name) return 'BF';
     return name.substring(0, 2).toUpperCase();
   };
+
+  // Trata a URL da imagem de perfil corretamente (suporta caminhos relativos e absolutos)
+  const getAvatarUrl = (url?: string) => {
+    if (!url) return null;
+    return url.startsWith('http') ? url : `${API_URL}${url}`;
+  };
+
+  const avatarUrl = getAvatarUrl(user?.image_url);
 
   return (
     <>
@@ -43,7 +55,7 @@ export function Navbar() {
             
             {/* Botão para Abrir o Modal do Carrinho */}
             <button
-              onClick={() => setIsCartOpen(true)} // Aciona diretamente a abertura global do modal
+              onClick={() => setIsCartOpen(true)}
               className="relative flex items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900 p-2.5 text-zinc-300 transition-all hover:border-red-500 hover:text-white cursor-pointer"
               title="Ver Carrinho"
               aria-label="Abrir carrinho de compras"
@@ -52,7 +64,6 @@ export function Navbar() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
               
-              {/* Badge reativo com contagem de itens */}
               {totalItems > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white shadow-md animate-pulse">
                   {totalItems}
@@ -66,13 +77,14 @@ export function Navbar() {
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-3">
                   <div className="relative h-10 w-10 overflow-hidden rounded-full border border-zinc-700 bg-zinc-800">
-                    {user.image_url ? (
+                    {avatarUrl ? (
                       <Link href="/profile">
                         <Image
-                          src={user.image_url}
+                          src={avatarUrl}
                           alt={user.name || 'Utilizador'}
                           fill
                           className="object-cover"
+                          unoptimized
                         />
                       </Link>
                     ) : (
@@ -92,7 +104,7 @@ export function Navbar() {
 
                 <button
                   onClick={logout}
-                  className="rounded-lg border border-zinc-700 px-3 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-red-500 hover:bg-red-500/10 hover:text-red-400"
+                  className="rounded-lg border border-zinc-700 px-3 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-red-500 hover:bg-red-500/10 hover:text-red-400 cursor-pointer"
                   title="Sair da conta"
                 >
                   Sair
@@ -118,7 +130,6 @@ export function Navbar() {
         </div>
       </header>
 
-      {/* Componente Modal de Carrinho renderizado globalmente (agora sem passar props manuais de isOpen/onClose) */}
       <CartModal />
     </>
   );
