@@ -17,7 +17,6 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState('');
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   
-  // Estados para a foto de perfil
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
@@ -34,7 +33,12 @@ export default function ProfilePage() {
       }
 
       if (user.addresses && user.addresses.length > 0) {
-        setAddresses(user.addresses);
+        // Formata os CEPs vindos da base de dados para exibição com máscara
+        const formattedAddresses = user.addresses.map(addr => ({
+          ...addr,
+          cep: formatCepMask(addr.cep || '')
+        }));
+        setAddresses(formattedAddresses);
       } else {
         setAddresses([
           {
@@ -64,6 +68,14 @@ export default function ProfilePage() {
     return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
   };
 
+  // Função para mascarar o CEP (Ex: 38400-000)
+  const formatCepMask = (value: string) => {
+    if (!value) return '';
+    const numbers = value.replace(/\D/g, '').slice(0, 8);
+    if (numbers.length <= 5) return numbers;
+    return `${numbers.slice(0, 5)}-${numbers.slice(5)}`;
+  };
+
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPhone(formatPhoneMask(e.target.value));
   };
@@ -89,7 +101,7 @@ export default function ProfilePage() {
         const updated = [...addresses];
         updated[index] = {
           ...updated[index],
-          cep: cleanCep,
+          cep: formatCepMask(cleanCep), // Mantém formatado no input
           address: data.logradouro || '',
           neighborhood: data.bairro || '',
         };
@@ -106,6 +118,12 @@ export default function ProfilePage() {
 
   const handleAddressChange = (index: number, field: keyof UserAddress, value: any) => {
     const updated = [...addresses];
+    
+    // Se o campo alterado for o CEP, aplica a máscara visual enquanto o utilizador digita
+    if (field === 'cep') {
+      value = formatCepMask(value);
+    }
+
     updated[index] = { ...updated[index], [field]: value };
     setAddresses(updated);
   };
@@ -143,14 +161,19 @@ export default function ProfilePage() {
     setSuccessMessage('');
 
     try {
-      // Como agora podemos enviar uma imagem (ficheiro binário), utilizamos FormData
+      // Limpa os carateres não numéricos (hífens, etc.) de todos os CEPs antes de enviar
+      const cleanedAddresses = addresses.map(addr => ({
+        ...addr,
+        cep: addr.cep.replace(/\D/g, '')
+      }));
+
       const formData = new FormData();
       formData.append('name', name);
       formData.append('phone', phone.replace(/\D/g, ''));
-      formData.append('addresses', JSON.stringify(addresses));
+      formData.append('addresses', JSON.stringify(cleanedAddresses));
       
       if (avatarFile) {
-        formData.append('image', avatarFile); // Nome do campo esperado pelo Multer no backend
+        formData.append('image', avatarFile);
       }
 
       await userService.updateUser(user.id, formData);
@@ -182,7 +205,6 @@ export default function ProfilePage() {
         <div className="bg-black/60 backdrop-blur-md border border-red-500/20 rounded-2xl p-6 sm:p-8 shadow-2xl">
           <form onSubmit={handleSave} className="space-y-6">
             
-            {/* Secção de Avatar / Imagem de Perfil */}
             <div className="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-red-900/40">
               <div className="relative w-28 h-28 rounded-full overflow-hidden border-2 border-red-500/50 bg-zinc-900 flex items-center justify-center shadow-lg group">
                 {avatarPreview ? (
