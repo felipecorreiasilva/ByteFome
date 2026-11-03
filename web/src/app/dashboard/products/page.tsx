@@ -1,31 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { ProductService } from '@/services/productService';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { FiPlus, FiEdit2, FiTrash2, FiSearch } from 'react-icons/fi';
 import { Product } from '@/types/product';
-import { useAuth } from '@/context/AuthContext';
 
 export default function AdminProductsPage() {
-  const { user, isLoading: authLoading } = useAuth();
-  const router = useRouter();
-  
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Se a autenticação terminou e o utilizador não for admin, redireciona
-    if (!authLoading) {
-      if (!user || user.role !== 'admin') {
-        router.push('/'); 
-      } else {
-        loadProducts();
-      }
-    }
-  }, [user, authLoading, router]);
+    loadProducts();
+  }, []);
 
   async function loadProducts() {
     try {
@@ -53,14 +41,6 @@ export default function AdminProductsPage() {
   const filteredProducts = products.filter((product) =>
     product.name.toLowerCase().includes(search.toLowerCase())
   );
-
-  if (authLoading || (user && user.role !== 'admin')) {
-    return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-white">
-        <p>A verificar permissões...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="relative isolate min-h-screen w-full overflow-hidden bg-linear-to-b from-red-700 via-red-900 to-red-950 text-white selection:bg-black selection:text-white -mt-16 pt-24 pb-16">

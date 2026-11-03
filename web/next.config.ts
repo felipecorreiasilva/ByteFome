@@ -15,6 +15,9 @@ const nextConfig: NextConfig = {
   devIndicators: false as any,
   experimental: {
     agentFeedback: true,
+    instantInsights: {
+      validationLevel: 'manual-warning',
+    },
   },
   cacheComponents: true,
   partialPrefetching: true,

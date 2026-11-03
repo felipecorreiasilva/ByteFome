@@ -1,6 +1,8 @@
 import React from 'react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 
+export const instant = false;
+
 export default function DashboardLayout({
   children,
 }: {
