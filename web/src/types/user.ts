@@ -14,8 +14,9 @@ export interface User {
     id: number;
     name: string;
     email: string;
+    phone?: string;
     role: 'client' | 'admin' | 'delivery';
-    image_url?: string; // Adicionado aqui
+    image_url?: string;
     created_at: string;
     addresses?: UserAddress[];
 }
