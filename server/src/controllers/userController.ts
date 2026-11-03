@@ -37,7 +37,7 @@ export class UserController {
     static async updateUser(req: AuthenticatedRequest, res: Response) {
         try {
             const id = Number(req.params.id);
-            const { name, email, role } = req.body;
+            const { name, email, role, phone } = req.body;
 
             // Dados do utilizador que está a fazer a requisição (vindos do verifyAuth / authMiddleware)
             const loggedUserId = req.user?.id;
@@ -85,8 +85,8 @@ export class UserController {
                 }
             }
 
-            // Monta o objeto com os dados permitidos para atualização
-            const dataToUpdate: any = { name, email, image_url };
+            // Monta o objeto com os dados permitidos para atualização (incluindo o phone)
+            const dataToUpdate: any = { name, email, phone, image_url };
             
             if (isAdmin) {
                 dataToUpdate.role = role; // Apenas admin pode persistir a alteração de role

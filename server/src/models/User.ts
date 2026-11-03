@@ -18,7 +18,8 @@ export interface User {
     email: string;
     password_hash: string;
     role: 'client' | 'admin' | 'delivery';
-    image_url?: string; // Adicionado aqui
+    image_url?: string;
+    phone?: string; // Adicionado aqui
     created_at?: string;
     addresses?: UserAddress[];
 }
@@ -26,7 +27,7 @@ export interface User {
 export class UserModel {
 
     static async getAll(): Promise<Omit<User, 'password_hash'>[]> {
-        const result = await pool.query('SELECT id, name, email, role, image_url, created_at FROM users');
+        const result = await pool.query('SELECT id, name, email, role, image_url, phone, created_at FROM users');
         
         return result.rows.map(user => {
             const { password_hash, ...userWithoutPassword } = user;
@@ -35,7 +36,7 @@ export class UserModel {
     }
 
     static async findById(id: number): Promise<Omit<User, 'password_hash'> | null> {
-        const result = await pool.query('SELECT id, name, email, role, image_url, created_at FROM users WHERE id = $1', [id]);
+        const result = await pool.query('SELECT id, name, email, role, image_url, phone, created_at FROM users WHERE id = $1', [id]);
         
         if (!result.rows[0]) {
             return null;
@@ -51,34 +52,35 @@ export class UserModel {
     }
 
     static async create(data: Omit<User, 'id' | 'created_at'>): Promise<Omit<User, 'password_hash'>> {
-        const { name, email, password_hash, role, image_url } = data;
+        const { name, email, password_hash, role, image_url, phone } = data;
         
         const query = `
-            INSERT INTO users (name, email, password_hash, role, image_url)
-            VALUES ($1, $2, $3, $4, $5)
-            RETURNING id, name, email, role, image_url, created_at;
+            INSERT INTO users (name, email, password_hash, role, image_url, phone)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING id, name, email, role, image_url, phone, created_at;
         `;
         
-        const values = [name, email, password_hash, role || 'client', image_url || null];
+        const values = [name, email, password_hash, role || 'client', image_url || null, phone || null];
         const result = await pool.query(query, values);
         
         return result.rows[0];
     }
 
     static async update(id: number, data: Partial<Omit<User, 'id' | 'password_hash' | 'created_at'>>): Promise<Omit<User, 'password_hash'> | null> {
-        const { name, email, role, image_url } = data;
+        const { name, email, role, image_url, phone } = data;
 
         const query = `
             UPDATE users 
             SET name = COALESCE($1, name),
                 email = COALESCE($2, email),
                 role = COALESCE($3, role),
-                image_url = COALESCE($4, image_url)
-            WHERE id = $5
-            RETURNING id, name, email, role, image_url, created_at;
+                image_url = COALESCE($4, image_url),
+                phone = COALESCE($5, phone)
+            WHERE id = $6
+            RETURNING id, name, email, role, image_url, phone, created_at;
         `;
 
-        const values = [name, email, role, image_url, id];
+        const values = [name, email, role, image_url, phone, id];
         const result = await pool.query(query, values);
 
         return result.rows[0] || null;
