@@ -11,22 +11,20 @@ interface CartModalProps {
 
 export function CartModal({ isOpen, onClose }: CartModalProps) {
     const router = useRouter();
-    const { cart, addToCart, removeFromCart, clearCart, totalPrice } = useCart();
+    // 1. Substituímos o removeFromCart pelo decreaseQuantity aqui
+    const { cart, addToCart, decreaseQuantity, clearCart, totalPrice } = useCart();
 
-    // Obtém a URL base do backend a partir do .env.local
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333';
 
     if (!isOpen) return null;
 
     return (
-        /* Removemos o fundo escuro (overlay) e permitimos cliques no resto da página */
         <div className="fixed inset-y-0 right-0 z-50 flex max-w-full pl-10 pointer-events-none">
             <div className="w-screen max-w-md bg-zinc-900 border-l border-zinc-800 text-white shadow-2xl flex flex-col justify-between h-full pointer-events-auto">
                 
                 {/* Cabeçalho */}
                 <div className="flex items-center justify-between p-6 border-b border-zinc-800 bg-zinc-950/50">
                     <div className="flex items-center gap-2.5">
-                        {/* Ícone de Carrinho */}
                         <svg 
                             xmlns="http://www.w3.org/2000/svg" 
                             className="h-6 w-6 text-red-500" 
@@ -84,18 +82,26 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
 
                                 {/* Controles de Quantidade */}
                                 <div className="flex items-center gap-2 bg-zinc-900 p-1 rounded-xl border border-zinc-800">
+                                    {/* 2. Botão de Menos (-) atualizado para decreaseQuantity */}
                                     <button
-                                        onClick={() => removeFromCart(item.product.id)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            decreaseQuantity(item.product.id);
+                                        }}
                                         className="h-7 w-7 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-300 hover:bg-zinc-700 transition cursor-pointer"
-                                        title="Remover 1"
+                                        title="Remover 1 unidade"
                                     >
                                         -
                                     </button>
                                     <span className="text-sm font-bold w-5 text-center">{item.quantity}</span>
+                                    {/* Botão de Mais (+) */}
                                     <button
-                                        onClick={() => addToCart(item.product)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            addToCart(item.product);
+                                        }}
                                         className="h-7 w-7 rounded-lg bg-red-600 flex items-center justify-center text-white hover:bg-red-500 transition shadow-sm cursor-pointer"
-                                        title="Adicionar mais"
+                                        title="Adicionar mais 1"
                                     >
                                         +
                                     </button>
@@ -124,8 +130,8 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
                             </button>
                             <button
                                 onClick={() => {
-                                    onClose(); // Fecha o modal do carrinho
-                                    router.push('/checkout'); // Redireciona para a página de checkout
+                                    onClose();
+                                    router.push('/checkout');
                                 }}
                                 className="flex-2 rounded-xl bg-red-600 py-3 text-sm font-bold text-white hover:bg-red-500 transition shadow-lg shadow-red-600/30 cursor-pointer"
                             >

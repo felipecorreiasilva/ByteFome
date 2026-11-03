@@ -11,6 +11,7 @@ export interface CartItem {
 interface CartContextData {
     cart: CartItem[];
     addToCart: (product: Product) => void;
+    decreaseQuantity: (productId: number) => void; // <--- Nova função de decrementar unitário
     removeFromCart: (productId: number) => void;
     clearCart: () => void;
     totalItems: number;
@@ -24,7 +25,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const [cart, setCart] = useState<CartItem[]>([]);
     const [isInitialized, setIsInitialized] = useState(false);
 
-    // Carregar itens do sessionStorage ao iniciar a aplicação
     useEffect(() => {
         try {
             const storedCart = sessionStorage.getItem(STORAGE_KEY);
@@ -38,7 +38,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
     }, []);
 
-    // Salvar itens no sessionStorage sempre que o estado 'cart' mudar
     useEffect(() => {
         if (isInitialized) {
             try {
@@ -52,12 +51,31 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const addToCart = (product: Product) => {
         setCart((prevCart) => {
             const existingIndex = prevCart.findIndex((item) => item.product.id === product.id);
+            
             if (existingIndex > -1) {
-                const newCart = [...prevCart];
-                newCart[existingIndex].quantity += 1;
-                return newCart;
+                // Em vez de mutar diretamente com += 1 (que pode duplicar se houver re-render duplo),
+                // mapeamos o array garantindo que somamos estritamente 1 unidade ao ID correspondente.
+                return prevCart.map((item, index) => {
+                    if (index === existingIndex) {
+                        return { ...item, quantity: item.quantity + 1 };
+                    }
+                    return item;
+                });
             }
+            
             return [...prevCart, { product, quantity: 1 }];
+        });
+    };
+
+    // Nova função para diminuir apenas 1 unidade ou remover se chegar a 0
+    const decreaseQuantity = (productId: number) => {
+        setCart((prevCart) => {
+            return prevCart.map((item) => {
+                if (item.product.id === productId) {
+                    return { ...item, quantity: item.quantity - 1 };
+                }
+                return item;
+            }).filter((item) => item.quantity > 0); // Remove automaticamente se a quantidade for 0
         });
     };
 
@@ -74,7 +92,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const totalPrice = cart.reduce((sum, item) => sum + Number(item.product.price) * item.quantity, 0);
 
     return (
-        <CartContext.Provider value={{ cart, addToCart, removeFromCart, clearCart, totalItems, totalPrice }}>
+        <CartContext.Provider value={{ cart, addToCart, decreaseQuantity, removeFromCart, clearCart, totalItems, totalPrice }}>
             {children}
         </CartContext.Provider>
     );

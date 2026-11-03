@@ -12,6 +12,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  devIndicators: false as any,
   experimental: {
     agentFeedback: true,
   },
