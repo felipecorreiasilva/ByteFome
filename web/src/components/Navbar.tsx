@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
@@ -9,8 +8,7 @@ import { CartModal } from '@/components/CartModal';
 
 export function Navbar() {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
-  const { totalItems } = useCart();
-  const [isCartOpen, setIsCartOpen] = useState(false);
+  const { totalItems, setIsCartOpen } = useCart(); // Usamos o setIsCartOpen global do contexto
 
   const getUserInitials = (name?: string) => {
     if (!name) return 'BF';
@@ -45,7 +43,7 @@ export function Navbar() {
             
             {/* Botão para Abrir o Modal do Carrinho */}
             <button
-              onClick={() => setIsCartOpen(true)}
+              onClick={() => setIsCartOpen(true)} // Aciona diretamente a abertura global do modal
               className="relative flex items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900 p-2.5 text-zinc-300 transition-all hover:border-red-500 hover:text-white cursor-pointer"
               title="Ver Carrinho"
               aria-label="Abrir carrinho de compras"
@@ -120,8 +118,8 @@ export function Navbar() {
         </div>
       </header>
 
-      {/* Componente Modal de Carrinho renderizado globalmente na Navbar */}
-      <CartModal isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+      {/* Componente Modal de Carrinho renderizado globalmente (agora sem passar props manuais de isOpen/onClose) */}
+      <CartModal />
     </>
   );
 }

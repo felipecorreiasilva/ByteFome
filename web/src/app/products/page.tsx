@@ -5,15 +5,13 @@ import { ProductService } from '@/services/productService';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { Product } from '@/types/product';
 import { useCart } from '@/context/CartContext';
-import { CartModal } from '@/components/CartModal';
 import { FiSearch, FiShoppingCart } from 'react-icons/fi';
 
 export default function ClientProductsPage() {
-  const { addToCart } = useCart();
+  const { addToCart } = useCart(); // Já não precisamos de importar o setIsCartOpen aqui, pois o addToCart já abre o modal globalmente
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
-  const [isCartOpen, setIsCartOpen] = useState(false);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333';
 
@@ -36,11 +34,6 @@ export default function ClientProductsPage() {
   const filteredProducts = products.filter((product) =>
     product.name.toLowerCase().includes(search.toLowerCase())
   );
-
-  const handleAddToCart = (product: Product) => {
-    addToCart(product);
-    setIsCartOpen(true); // Abre o modal do carrinho imediatamente ao pedir
-  };
 
   return (
     <div className="relative isolate min-h-screen w-full overflow-hidden bg-linear-to-b from-red-700 via-red-900 to-red-950 text-white selection:bg-black selection:text-white -mt-16 pt-24 pb-16">
@@ -132,7 +125,7 @@ export default function ClientProductsPage() {
                     {formatCurrency(product.price)}
                   </span>
                   <button
-                    onClick={() => handleAddToCart(product)}
+                    onClick={() => addToCart(product)}
                     className="flex items-center gap-2 rounded-xl bg-black hover:bg-zinc-900 px-4 py-2.5 text-xs font-bold text-white transition-all shadow-md shadow-black/40 hover:scale-105 cursor-pointer border border-red-500/30"
                   >
                     <FiShoppingCart size={16} />
@@ -144,9 +137,6 @@ export default function ClientProductsPage() {
           </div>
         )}
       </div>
-
-      {/* Modal do Carrinho Lateral */}
-      <CartModal isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </div>
   );
 }

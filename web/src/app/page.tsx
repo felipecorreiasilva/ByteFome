@@ -11,7 +11,7 @@ export default function Home() {
   const { addToCart } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-
+  
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Obtém a URL base do backend a partir do .env.local

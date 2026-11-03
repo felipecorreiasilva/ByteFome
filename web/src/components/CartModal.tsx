@@ -4,26 +4,34 @@ import React from 'react';
 import { useCart } from '@/context/CartContext';
 import { useRouter } from 'next/navigation';
 
-interface CartModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-}
-
-export function CartModal({ isOpen, onClose }: CartModalProps) {
+export function CartModal() {
     const router = useRouter();
-    // 1. Substituímos o removeFromCart pelo decreaseQuantity aqui
-    const { cart, addToCart, decreaseQuantity, clearCart, totalPrice } = useCart();
+    const { cart, addToCart, decreaseQuantity, clearCart, totalPrice, isCartOpen, setIsCartOpen } = useCart();
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333';
 
-    if (!isOpen) return null;
+    // Se o modal não estiver aberto globalmente, não renderiza nada
+    if (!isCartOpen) return null;
+
+    const handleClose = () => {
+        setIsCartOpen(false);
+    };
 
     return (
-        <div className="fixed inset-y-0 right-0 z-50 flex max-w-full pl-10 pointer-events-none">
-            <div className="w-screen max-w-md bg-zinc-900 border-l border-zinc-800 text-white shadow-2xl flex flex-col justify-between h-full pointer-events-auto">
+        /* z-[99999] garante prioridade máxima absoluta sobre qualquer header, navbar ou layout */
+        <div className="fixed inset-0 z-99999 flex justify-end pointer-events-none">
+            
+            {/* Overlay escuro de fundo para fechar ao clicar fora */}
+            <div 
+                className="absolute inset-0 bg-black/60 backdrop-blur-xs pointer-events-auto transition-opacity"
+                onClick={handleClose}
+            />
+
+            {/* Conteúdo Lateral do Carrinho */}
+            <div className="relative w-screen max-w-md bg-zinc-900 border-l border-zinc-800 text-white shadow-2xl flex flex-col justify-between h-full pointer-events-auto z-10">
                 
                 {/* Cabeçalho */}
-                <div className="flex items-center justify-between p-6 border-b border-zinc-800 bg-zinc-950/50">
+                <div className="flex items-center justify-between p-6 border-b border-zinc-800 bg-zinc-950/90">
                     <div className="flex items-center gap-2.5">
                         <svg 
                             xmlns="http://www.w3.org/2000/svg" 
@@ -43,8 +51,9 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
                     </div>
 
                     <button
-                        onClick={onClose}
+                        onClick={handleClose}
                         className="rounded-lg p-2 text-zinc-400 hover:bg-zinc-800 hover:text-white transition cursor-pointer"
+                        title="Fechar carrinho"
                     >
                         ✕
                     </button>
@@ -62,7 +71,7 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
                                 {item.product.image_url ? (
                                     <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-zinc-800">
                                         <img
-                                            src={`${API_URL}${item.product.image_url}`}
+                                            src={item.product.image_url.startsWith('http') ? item.product.image_url : `${API_URL}${item.product.image_url}`}
                                             alt={item.product.name}
                                             className="h-full w-full object-cover"
                                         />
@@ -82,7 +91,6 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
 
                                 {/* Controles de Quantidade */}
                                 <div className="flex items-center gap-2 bg-zinc-900 p-1 rounded-xl border border-zinc-800">
-                                    {/* 2. Botão de Menos (-) atualizado para decreaseQuantity */}
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
@@ -94,7 +102,6 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
                                         -
                                     </button>
                                     <span className="text-sm font-bold w-5 text-center">{item.quantity}</span>
-                                    {/* Botão de Mais (+) */}
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
@@ -113,7 +120,7 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
 
                 {/* Rodapé com Totais e Ações */}
                 {cart.length > 0 && (
-                    <div className="p-6 border-t border-zinc-800 bg-zinc-950/60 space-y-4">
+                    <div className="p-6 border-t border-zinc-800 bg-zinc-950/90 space-y-4">
                         <div className="flex items-center justify-between text-base font-bold">
                             <span className="text-zinc-400">Total do Pedido:</span>
                             <span className="text-red-500 text-xl font-extrabold">
@@ -130,7 +137,7 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
                             </button>
                             <button
                                 onClick={() => {
-                                    onClose();
+                                    handleClose();
                                     router.push('/checkout');
                                 }}
                                 className="flex-2 rounded-xl bg-red-600 py-3 text-sm font-bold text-white hover:bg-red-500 transition shadow-lg shadow-red-600/30 cursor-pointer"
