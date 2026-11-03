@@ -1,3 +1,5 @@
+// /app/profile/page.tsx
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -5,7 +7,8 @@ import { useAuth } from '@/context/AuthContext';
 import { userService } from '@/services/userService';
 import { UserAddress } from '@/types/user';
 import { AddressItemForm } from '@/components/AddressItemForm';
-import { FiUser, FiMail, FiSave, FiMapPin, FiPhone, FiPlus } from 'react-icons/fi';
+import { FiUser, FiMail, FiSave, FiMapPin, FiPhone, FiPlus, FiCamera } from 'react-icons/fi';
+import Image from 'next/image';
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -14,6 +17,10 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState('');
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   
+  // Estados para a foto de perfil
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
   const [loadingCepIndex, setLoadingCepIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -22,13 +29,17 @@ export default function ProfilePage() {
     if (user) {
       setName(user.name || '');
       setPhone(formatPhoneMask(user.phone || ''));
+      if (user.image_url) {
+        setAvatarPreview(user.image_url);
+      }
+
       if (user.addresses && user.addresses.length > 0) {
         setAddresses(user.addresses);
       } else {
         setAddresses([
           {
             id: 1,
-            user_id: user.id,
+            user_id: user.id || 1,
             cep: '',
             address: '',
             street_number: '',
@@ -55,6 +66,14 @@ export default function ProfilePage() {
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPhone(formatPhoneMask(e.target.value));
+  };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
+    }
   };
 
   const handleCepBlur = async (index: number, cepValue: string) => {
@@ -124,14 +143,21 @@ export default function ProfilePage() {
     setSuccessMessage('');
 
     try {
-      await userService.updateUser(user.id, {
-        name,
-        phone: phone.replace(/\D/g, ''),
-        addresses,
-      });
+      // Como agora podemos enviar uma imagem (ficheiro binário), utilizamos FormData
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('phone', phone.replace(/\D/g, ''));
+      formData.append('addresses', JSON.stringify(addresses));
+      
+      if (avatarFile) {
+        formData.append('image', avatarFile); // Nome do campo esperado pelo Multer no backend
+      }
+
+      await userService.updateUser(user.id, formData);
       setSuccessMessage('Perfil e moradas atualizados com sucesso!');
     } catch (error) {
       console.error('Erro ao atualizar perfil:', error);
+      alert('Ocorreu um erro ao atualizar o perfil.');
     } finally {
       setLoading(false);
     }
@@ -155,6 +181,44 @@ export default function ProfilePage() {
 
         <div className="bg-black/60 backdrop-blur-md border border-red-500/20 rounded-2xl p-6 sm:p-8 shadow-2xl">
           <form onSubmit={handleSave} className="space-y-6">
+            
+            {/* Secção de Avatar / Imagem de Perfil */}
+            <div className="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-red-900/40">
+              <div className="relative w-28 h-28 rounded-full overflow-hidden border-2 border-red-500/50 bg-zinc-900 flex items-center justify-center shadow-lg group">
+                {avatarPreview ? (
+                  <Image 
+                    src={avatarPreview} 
+                    alt="Avatar" 
+                    fill 
+                    className="object-cover"
+                  />
+                ) : (
+                  <FiUser size={48} className="text-zinc-500" />
+                )}
+                <label htmlFor="avatar-input" className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity cursor-pointer text-xs font-semibold text-white">
+                  <FiCamera size={20} className="mb-1" />
+                  Alterar
+                </label>
+              </div>
+              <div className="text-center sm:text-left">
+                <h3 className="text-lg font-bold text-red-100">Foto de Perfil</h3>
+                <p className="text-xs text-zinc-400 mt-1 mb-3">Escolha uma imagem nos formatos PNG, JPG ou JPEG.</p>
+                <input 
+                  id="avatar-input" 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleAvatarChange} 
+                  className="hidden" 
+                />
+                <label 
+                  htmlFor="avatar-input" 
+                  className="inline-block bg-red-800/80 hover:bg-red-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-md cursor-pointer"
+                >
+                  Carregar Nova Foto
+                </label>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-xs uppercase tracking-wider text-red-200 font-semibold mb-2">Nome Completo</label>

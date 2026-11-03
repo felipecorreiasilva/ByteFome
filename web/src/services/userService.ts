@@ -1,3 +1,5 @@
+// /src/services/userService.ts
+
 import api from './api';
 import { User } from '@/types/user';
 
@@ -12,7 +14,7 @@ export const userService = {
         return response.data;
     },
 
-    async updateUser(userId: number, data: Partial<User>): Promise<User> {
+    async updateUser(userId: number, data: Partial<User> | FormData): Promise<User> {
         const response = await api.put<User>(`/users/${userId}`, data);
         return response.data;
     },
@@ -20,4 +22,4 @@ export const userService = {
     async deleteUser(userId: number): Promise<void> {
         await api.delete(`/users/${userId}`);
     }
-}
+};
