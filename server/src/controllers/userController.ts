@@ -67,7 +67,7 @@ export class UserController {
             }
 
             // 4. Tratamento da Nova Imagem de Perfil via Multer
-            let image_url = req.body.image_url; // Mantém o valor anterior caso venha por texto
+            let image_url = existingUser.image_url; // Mantém a imagem anterior por defeito
             
             if (req.file) {
                 // Se um novo ficheiro foi enviado pelo Multer, definimos o novo caminho relativo
@@ -85,8 +85,27 @@ export class UserController {
                 }
             }
 
-            // Monta o objeto com os dados permitidos para atualização (incluindo o phone)
-            const dataToUpdate: any = { name, email, phone, image_url };
+            // 5. Tratamento dos Endereços (vindos do FormData em formato string JSON)
+            let parsedAddresses;
+            if (req.body.addresses) {
+                try {
+                    parsedAddresses = typeof req.body.addresses === 'string' 
+                        ? JSON.parse(req.body.addresses) 
+                        : req.body.addresses;
+                } catch (parseError) {
+                    console.error('Erro ao fazer parse dos endereços:', parseError);
+                    return res.status(400).json({ error: 'Formato de endereços inválido.' });
+                }
+            }
+
+            // Monta o objeto com os dados permitidos para atualização
+            const dataToUpdate: any = { 
+                name, 
+                email, 
+                phone, 
+                image_url,
+                addresses: parsedAddresses 
+            };
             
             if (isAdmin) {
                 dataToUpdate.role = role; // Apenas admin pode persistir a alteração de role
@@ -113,7 +132,7 @@ export class UserController {
                 return res.status(404).json({ error: 'Utilizador não encontrado.' });
             }
 
-            // 2. Executar a exclusão na base de dados
+            // 2. Executar a exclusão na base de dados (o model já remove os endereços associados)
             const deleted = await UserModel.delete(id);
 
             if (!deleted) {
@@ -123,9 +142,7 @@ export class UserController {
             // 3. Se o utilizador tinha uma imagem de perfil associada, remove o ficheiro físico do servidor
             if (user.image_url) {
                 try {
-                    // user.image_url vem como algo do tipo: "/uploads/users/nome-do-avatar.jpg"
                     const filePath = path.join(process.cwd(), user.image_url);
-                    
                     await fs.unlink(filePath);
                     console.log(`Ficheiro de avatar removido com sucesso: ${filePath}`);
                 } catch (fileError) {

@@ -10,6 +10,8 @@ import { AddressItemForm } from '@/components/AddressItemForm';
 import { FiUser, FiMail, FiSave, FiMapPin, FiPhone, FiPlus, FiCamera } from 'react-icons/fi';
 import Image from 'next/image';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333';
+
 export default function ProfilePage() {
   const { user } = useAuth();
   
@@ -28,18 +30,28 @@ export default function ProfilePage() {
     if (user) {
       setName(user.name || '');
       setPhone(formatPhoneMask(user.phone || ''));
+      
       if (user.image_url) {
-        setAvatarPreview(user.image_url);
+        const fullImageUrl = user.image_url.startsWith('http') 
+          ? user.image_url 
+          : `${API_URL}${user.image_url}`;
+        
+        setAvatarPreview(fullImageUrl);
       }
 
+      // Verifica se existem endereços salvos e se o array não está vazio
       if (user.addresses && user.addresses.length > 0) {
-        // Formata os CEPs vindos da base de dados para exibição com máscara
         const formattedAddresses = user.addresses.map(addr => ({
           ...addr,
-          cep: formatCepMask(addr.cep || '')
+          cep: formatCepMask(addr.cep || ''),
+          address: addr.address || '',
+          street_number: addr.street_number || '',
+          neighborhood: addr.neighborhood || '',
+          complement: addr.complement || '',
         }));
         setAddresses(formattedAddresses);
       } else {
+        // Se não houver nenhum endereço guardado, cria o primeiro em branco
         setAddresses([
           {
             id: 1,
@@ -213,6 +225,7 @@ export default function ProfilePage() {
                     alt="Avatar" 
                     fill 
                     className="object-cover"
+                    unoptimized
                   />
                 ) : (
                   <FiUser size={48} className="text-zinc-500" />
