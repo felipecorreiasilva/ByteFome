@@ -53,7 +53,7 @@ Pré-requisitos:
 
 1. Clonar o repositório
 
-git clone [https://github.com/teu-utilizador/ByteFome.git](https://github.com/teu-utilizador/ByteFome.git)
+git clone [https://github.com/felipecorreiasilva/ByteFome.git](https://github.com/felipecorreiasilva/ByteFome.git)
 cd ByteFome
 
 2. Configurar e Iniciar o Backend (/server)
