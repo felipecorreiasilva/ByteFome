@@ -5,6 +5,11 @@ node_modules/
 .env
 .env.local
 
+# Certificados de Pagamento (Efí Bank e outros)
+certs/
+server/certs/
+*.p12
+
 # Build e arquivos compilados
 dist/
 build/
