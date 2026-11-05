@@ -48,10 +48,12 @@ export default function ProfilePage() {
           street_number: addr.street_number || '',
           neighborhood: addr.neighborhood || '',
           complement: addr.complement || '',
+          city: addr.city || 'Uberlândia',
+          state: addr.state || 'MG',
         }));
         setAddresses(formattedAddresses);
       } else {
-        // Se não houver nenhum endereço guardado, cria o primeiro em branco
+        // Se não houver nenhum endereço guardado, cria o primeiro com city e state padrão
         setAddresses([
           {
             id: 1,
@@ -61,6 +63,8 @@ export default function ProfilePage() {
             street_number: '',
             neighborhood: '',
             complement: '',
+            city: 'Uberlândia',
+            state: 'MG',
             is_default: true,
             created_at: new Date().toISOString()
           }
@@ -116,6 +120,8 @@ export default function ProfilePage() {
           cep: formatCepMask(cleanCep), // Mantém formatado no input
           address: data.logradouro || '',
           neighborhood: data.bairro || '',
+          city: data.localidade || 'Uberlândia',
+          state: data.uf || 'MG',
         };
         setAddresses(updated);
       } else {
@@ -151,6 +157,8 @@ export default function ProfilePage() {
         street_number: '',
         neighborhood: '',
         complement: '',
+        city: 'Uberlândia',
+        state: 'MG',
         is_default: addresses.length === 0,
         created_at: new Date().toISOString()
       }
@@ -173,7 +181,7 @@ export default function ProfilePage() {
     setSuccessMessage('');
 
     try {
-      // Limpa os carateres não numéricos (hífens, etc.) de todos os CEPs antes de enviar
+      // Limpa os carateres não numéricos de todos os CEPs antes de enviar
       const cleanedAddresses = addresses.map(addr => ({
         ...addr,
         cep: addr.cep.replace(/\D/g, '')
