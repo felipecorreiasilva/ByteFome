@@ -44,12 +44,17 @@ CREATE TABLE IF NOT EXISTS orders (
     payment_method VARCHAR(30) NOT NULL,
     status VARCHAR(30) DEFAULT 'received', -- 'received', 'preparing', 'delivering', 'completed'
     
+    -- Identificador da Transação Pix (Efí Bank)
+    txid VARCHAR(255) UNIQUE,
+
     -- Dados de Entrega (Morada)
     cep VARCHAR(10) NOT NULL,
     address VARCHAR(255) NOT NULL,
     street_number VARCHAR(20) NOT NULL,
     complement VARCHAR(100),
     neighborhood VARCHAR(100) NOT NULL,
+    city VARCHAR(100) NOT NULL,
+    state VARCHAR(2) NOT NULL,
 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 

@@ -14,6 +14,8 @@ export interface ShippingAddressDTO {
     street_number: string;
     complement?: string;
     neighborhood: string;
+    city: string;
+    state: string;
 }
 
 export interface CreateOrderDTO {
@@ -32,7 +34,7 @@ export const OrderModel = {
         try {
             await client.query('BEGIN');
 
-            // Inserir o pedido principal na tabela 'orders' (Corrigido de 'total' para 'total_amount')
+            // Inserir o pedido principal na tabela 'orders' incluindo cidade, estado e status inicial 'received'
             const orderQuery = `
                 INSERT INTO orders (
                     user_id, 
@@ -43,8 +45,10 @@ export const OrderModel = {
                     street_number, 
                     complement, 
                     neighborhood, 
+                    city,
+                    state,
                     status
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending')
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'received')
                 RETURNING id, created_at;
             `;
 
@@ -56,7 +60,9 @@ export const OrderModel = {
                 orderData.shippingAddress.address,
                 orderData.shippingAddress.street_number,
                 orderData.shippingAddress.complement || null,
-                orderData.shippingAddress.neighborhood
+                orderData.shippingAddress.neighborhood,
+                orderData.shippingAddress.city,
+                orderData.shippingAddress.state
             ];
 
             const orderResult = await client.query(orderQuery, orderValues);
@@ -119,7 +125,14 @@ export const OrderModel = {
         return result.rows[0];
     },
 
-    // 4. UPDATE STATUS - Atualizar o estado do pedido
+    // 3.1. READ BY TXID - Localizar o pedido através do identificador da transação Pix da Efí
+    async findByTxid(txid: string) {
+        const query = `SELECT * FROM orders WHERE txid = $1 LIMIT 1;`;
+        const result = await pool.query(query, [txid]);
+        return result.rows[0] || null;
+    },
+
+    // 4. UPDATE STATUS - Atualizar o estado operacional do pedido
     async updateStatus(orderId: number, status: string) {
         const query = `
             UPDATE orders 
@@ -128,6 +141,18 @@ export const OrderModel = {
             RETURNING *;
         `;
         const result = await pool.query(query, [status, orderId]);
+        return result.rows[0];
+    },
+
+    // 4.1. UPDATE TXID - Guardar o txid do Pix gerado pela Efí associado ao pedido
+    async updateTxid(orderId: number, txid: string) {
+        const query = `
+            UPDATE orders 
+            SET txid = $1 
+            WHERE id = $2 
+            RETURNING *;
+        `;
+        const result = await pool.query(query, [txid, orderId]);
         return result.rows[0];
     },
 

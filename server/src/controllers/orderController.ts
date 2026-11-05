@@ -16,9 +16,21 @@ export const orderController = {
 
             const { items, total, paymentMethod, shippingAddress } = req.body;
 
-            // Validação básica dos dados recebidos
-            if (!items || items.length === 0 || !total || !paymentMethod || !shippingAddress) {
-                return res.status(400).json({ error: 'Dados incompletos para criar o pedido.' });
+            // Validação básica dos dados recebidos, incluindo cidade e estado na morada
+            if (
+                !items || 
+                items.length === 0 || 
+                !total || 
+                !paymentMethod || 
+                !shippingAddress || 
+                !shippingAddress.cep || 
+                !shippingAddress.address || 
+                !shippingAddress.street_number || 
+                !shippingAddress.neighborhood || 
+                !shippingAddress.city || 
+                !shippingAddress.state
+            ) {
+                return res.status(400).json({ error: 'Dados incompletos para criar o pedido. Verifique a morada completa (incluindo cidade e estado).' });
             }
 
             const newOrder = await OrderModel.create({
@@ -70,7 +82,7 @@ export const orderController = {
         }
     },
 
-    // 4. UPDATE STATUS - Atualiza o estado operacional do pedido (ex: pending, received, preparing, delivering, completed)
+    // 4. UPDATE STATUS - Atualiza o estado operacional do pedido (ex: received, preparing, delivering, completed)
     async updateOrderStatus(req: Request, res: Response) {
         try {
             const { id } = req.params;

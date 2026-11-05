@@ -176,6 +176,19 @@ export const efiController = {
                     const txid = pagamento.txid;
                     const valorPago = pagamento.valor;
                     console.log(`💰 Pix recebido! TXID: ${txid}, Valor: ${valorPago}`);
+
+                    if (txid) {
+                        // 1. Procura o pedido pelo txid na base de dados
+                        const order = await OrderModel.findByTxid(txid);
+
+                        if (order) {
+                            // 2. Atualiza automaticamente o status do pedido para 'preparing' (A preparar na cozinha)
+                            await OrderModel.updateStatus(order.id, 'preparing');
+                            console.log(`✅ Pedido #${order.id} atualizado para 'preparing' via Webhook Pix.`);
+                        } else {
+                            console.warn(`⚠️ Nenhum pedido encontrado para o TXID: ${txid}`);
+                        }
+                    }
                 }
             }
 
