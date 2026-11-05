@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS user_addresses (
     street_number VARCHAR(20) NOT NULL,
     complement VARCHAR(100),
     neighborhood VARCHAR(100) NOT NULL,
+    city VARCHAR(100) NOT NULL,
+    state VARCHAR(2) NOT NULL,
     is_default BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

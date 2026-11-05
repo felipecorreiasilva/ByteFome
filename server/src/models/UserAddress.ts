@@ -8,6 +8,8 @@ export interface UserAddress {
     street_number: string;
     complement?: string;
     neighborhood: string;
+    city: string;       // Adicionado para a Efí Bank
+    state: string;      // Adicionado para a Efí Bank
     is_default?: boolean;
 }
 
@@ -15,8 +17,8 @@ export class UserAddressModel {
     // 1. Criar um único endereço
     static async create(addr: UserAddress): Promise<UserAddress> {
         const query = `
-            INSERT INTO user_addresses (user_id, cep, address, street_number, complement, neighborhood, is_default)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            INSERT INTO user_addresses (user_id, cep, address, street_number, complement, neighborhood, city, state, is_default)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             RETURNING *;
         `;
         const values = [
@@ -26,6 +28,8 @@ export class UserAddressModel {
             addr.street_number,
             addr.complement || null,
             addr.neighborhood,
+            addr.city,
+            addr.state,
             addr.is_default || false
         ];
         const result = await pool.query(query, values);
@@ -59,8 +63,10 @@ export class UserAddressModel {
                 street_number = COALESCE($3, street_number),
                 complement = COALESCE($4, complement),
                 neighborhood = COALESCE($5, neighborhood),
-                is_default = COALESCE($6, is_default)
-            WHERE id = $7
+                city = COALESCE($6, city),
+                state = COALESCE($7, state),
+                is_default = COALESCE($8, is_default)
+            WHERE id = $9
             RETURNING *;
         `;
         const values = [
@@ -69,6 +75,8 @@ export class UserAddressModel {
             addr.street_number,
             addr.complement,
             addr.neighborhood,
+            addr.city,
+            addr.state,
             addr.is_default,
             id
         ];
@@ -102,8 +110,8 @@ export class UserAddressModel {
             // Insere os novos endereços enviados
             for (const addr of addresses) {
                 await client.query(
-                    `INSERT INTO user_addresses (user_id, cep, address, street_number, complement, neighborhood, is_default)
-                     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                    `INSERT INTO user_addresses (user_id, cep, address, street_number, complement, neighborhood, city, state, is_default)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
                     [
                         user_id,
                         addr.cep,
@@ -111,6 +119,8 @@ export class UserAddressModel {
                         addr.street_number,
                         addr.complement || null,
                         addr.neighborhood,
+                        addr.city,
+                        addr.state,
                         addr.is_default || false
                     ]
                 );
