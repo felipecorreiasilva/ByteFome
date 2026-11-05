@@ -26,5 +26,5 @@ const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCa
 export const uploadUser = multer({ 
   storage, 
   fileFilter,
-  limits: { fileSize: 3 * 1024 * 1024 } // Limite de 3MB para avatares
+  limits: { fileSize: 5 * 1024 * 1024 } // Limite de 3MB para avatares
 });
