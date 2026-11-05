@@ -36,7 +36,7 @@ export default function PaymentPixModal({ isOpen, orderId, totalAmount, onClose,
                 setError(null);
 
                 // Chama o backend através do efiService
-                const data = await efiService.gerarCobrancaPix(orderId);
+                const data = await efiService.generatePixCharge(orderId);
 
                 if (isMounted && data) {
                     setPixCopyPaste(data.pixCopiaECola || '');

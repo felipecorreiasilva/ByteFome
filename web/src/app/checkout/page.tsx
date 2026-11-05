@@ -39,7 +39,7 @@ export default function CheckoutPage() {
     const [addressMode, setAddressMode] = useState<'list' | 'form'>('list');
     const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
 
-    // Estado do novo endereço com valores estáticos seguros para SSR (evita erros de Date.now / new Date no Server Render)
+    // Estado do novo endereço com city e state incluídos para satisfazer a interface atualizada
     const [newAddress, setNewAddress] = useState<UserAddress>({
         id: 0,
         user_id: 1,
@@ -48,6 +48,8 @@ export default function CheckoutPage() {
         street_number: '',
         neighborhood: '',
         complement: '',
+        city: 'Uberlândia',
+        state: 'MG',
         is_default: false,
         created_at: ''
     });
@@ -125,6 +127,8 @@ export default function CheckoutPage() {
                     cep: cleanCep,
                     address: data.logradouro || '',
                     neighborhood: data.bairro || '',
+                    city: data.localidade || 'Uberlândia',
+                    state: data.uf || 'MG'
                 }));
             } else {
                 alert('CEP não encontrado.');
@@ -182,7 +186,9 @@ export default function CheckoutPage() {
                 address: chosen.address,
                 street_number: chosen.street_number,
                 complement: chosen.complement || '',
-                neighborhood: chosen.neighborhood
+                neighborhood: chosen.neighborhood,
+                city: chosen.city || 'Uberlândia',
+                state: chosen.state || 'MG'
             };
         } else {
             shippingAddressPayload = {
@@ -190,7 +196,9 @@ export default function CheckoutPage() {
                 address: newAddress.address,
                 street_number: newAddress.street_number,
                 complement: newAddress.complement || '',
-                neighborhood: newAddress.neighborhood
+                neighborhood: newAddress.neighborhood,
+                city: newAddress.city || 'Uberlândia',
+                state: newAddress.state || 'MG'
             };
         }
 

@@ -6,6 +6,8 @@ export interface UserAddress {
     street_number: string;
     complement?: string;
     neighborhood: string;
+    city: string;
+    state: string;
     is_default: boolean;
     created_at: string;
 }
