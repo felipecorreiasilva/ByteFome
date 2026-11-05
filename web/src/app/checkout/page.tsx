@@ -10,6 +10,7 @@ import { orderService } from '@/services/orderService';
 import { PaymentMethod } from '@/types/order';
 import { UserAddress } from '@/types/user';
 import PaymentPixModal from '@/components/checkout/PaymentPixModal';
+import PaymentCreditOrDebitModal from '@/components/checkout/PaymentCreditOrDebitModal';
 import { AddressItemForm } from '@/components/AddressItemForm';
 import { FaPix, FaCreditCard, FaMoneyBillWave } from 'react-icons/fa6';
 import { FiPhone, FiMapPin, FiPlus, FiCheckCircle } from 'react-icons/fi';
@@ -58,8 +59,9 @@ export default function CheckoutPage() {
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
     const [loading, setLoading] = useState(false);
 
-    // Estados do modal Pix
+    // Estados dos Modais de Pagamento
     const [showPixModal, setShowPixModal] = useState(false);
+    const [showCardModal, setShowCardModal] = useState(false);
     const [createdOrderId, setCreatedOrderId] = useState<number | null>(null);
 
     useEffect(() => {
@@ -232,6 +234,13 @@ export default function CheckoutPage() {
                 return;
             }
 
+            if (paymentMethod === 'credit_card') {
+                setShowCardModal(true);
+                setLoading(false);
+                return;
+            }
+
+            // Para dinheiro ou outros métodos tradicionais
             alert('Pedido criado com sucesso!');
             clearCart();
             router.push('/orders/success'); 
@@ -240,7 +249,7 @@ export default function CheckoutPage() {
             const errorMessage = error.response?.data?.error || 'Ocorreu um erro ao processar o seu pedido.';
             alert(errorMessage);
         } finally {
-            if (paymentMethod !== 'pix') {
+            if (paymentMethod === 'pix' || paymentMethod === 'credit_card') {
                 setLoading(false);
             }
         }
@@ -248,7 +257,8 @@ export default function CheckoutPage() {
 
     const handlePaymentApproved = () => {
         setShowPixModal(false);
-        alert('Pagamento via Pix confirmado com sucesso!');
+        setShowCardModal(false);
+        alert('Pagamento confirmado com sucesso!');
         clearCart();
         router.push('/orders/success');
     };
@@ -391,7 +401,7 @@ export default function CheckoutPage() {
                                 </button>
                             </div>
 
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div
                                     onClick={() => setPaymentMethod('pix')}
                                     className={`cursor-pointer flex flex-col items-center justify-center p-4 rounded-2xl border transition-all ${
@@ -414,21 +424,8 @@ export default function CheckoutPage() {
                                     }`}
                                 >
                                     <FaCreditCard className={`w-7 h-7 mb-2 ${paymentMethod === 'credit_card' ? 'text-red-500' : 'text-zinc-400'}`} />
-                                    <span className="font-bold text-sm text-zinc-100">Crédito</span>
-                                    <span className="text-[10px] text-zinc-500 mt-1">Cartão de Crédito</span>
-                                </div>
-
-                                <div
-                                    onClick={() => setPaymentMethod('debit_card')}
-                                    className={`cursor-pointer flex flex-col items-center justify-center p-4 rounded-2xl border transition-all ${
-                                        paymentMethod === 'debit_card'
-                                            ? 'bg-red-600/20 border-red-500 text-white shadow-lg shadow-red-500/10'
-                                            : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
-                                    }`}
-                                >
-                                    <FaCreditCard className={`w-7 h-7 mb-2 ${paymentMethod === 'debit_card' ? 'text-red-500' : 'text-zinc-400'}`} />
-                                    <span className="font-bold text-sm text-zinc-100">Débito</span>
-                                    <span className="text-[10px] text-zinc-500 mt-1">Cartão de Débito</span>
+                                    <span className="font-bold text-sm text-zinc-100">Cartão</span>
+                                    <span className="text-[10px] text-zinc-500 mt-1">Crédito ou Débito</span>
                                 </div>
 
                                 <div
@@ -466,11 +463,21 @@ export default function CheckoutPage() {
                 )}
             </div>
 
+            {/* Modal Pix */}
             <PaymentPixModal 
                 isOpen={showPixModal}
                 orderId={createdOrderId}
                 totalAmount={totalPrice}
                 onClose={() => setShowPixModal(false)}
+                onPaymentApproved={handlePaymentApproved}
+            />
+
+            {/* Modal Unificado de Cartão (Crédito/Débito por Abas) */}
+            <PaymentCreditOrDebitModal 
+                isOpen={showCardModal}
+                orderId={createdOrderId}
+                totalAmount={totalPrice}
+                onClose={() => setShowCardModal(false)}
                 onPaymentApproved={handlePaymentApproved}
             />
         </div>
